@@ -30,6 +30,7 @@ server.c - prototypes adn definitions for Chess Aplication
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <mysql/mysql.h>
+#include <sys/select.h>
 
 /* Define macro functions */
 #define TMP 1024
