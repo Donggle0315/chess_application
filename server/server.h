@@ -29,7 +29,6 @@ server.c - prototypes adn definitions for Chess Aplication
 #include <netdb.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include <sys/epoll.h>
 #include <mysql/mysql.h>
 
 /* Define macro functions */
@@ -53,7 +52,13 @@ server.c - prototypes adn definitions for Chess Aplication
 typedef struct sockaddr SA;
 
 typedef struct POOL_CLIENT{
-
+    int conn_count;
+    int maxfd;
+    fd_set read_set;
+    fd_ser ready_set;
+    int nready;
+    int maxi;
+    int clientfd[FD_SETSIZE];
 } pool_client;
 
 typedef struct ROOM_OPTION{
@@ -75,39 +80,25 @@ typedef struct POOL_ROOM{
 
 
 /**
- * implement : 서버 초기화
- * input :
- * output :
+ * implement : 
+ * input : void
+ * output : mysql 구조체 포인터
 */
-void init_program(void);
+MYSQL* init_mysql();
 
 /**
- * implement : DB와 연결
- * input :
- * output :
+ * implement : client pool 초기화
+ * input : pool_client pointer
+ * output : int 성공(1)/실패(0)
 */
-void connect_DB(void);
+int init_client_pool(pool_client*);
 
 /**
- * implement : client pool 초기화, 서버에 접속한 모든 클라이언트 정보 저장
- * input :
- * output :
+ * implement : room pool 초기화
+ * input : pool_room pointer
+ * output : int 성공(1)/실패(0)
 */
-void init_client_pool(void);
-
-/**
- * implement : room pool 초기화, 서버에 만들어진 모든 방 정보 저장
- * input :
- * output :
-*/
-void init_room_pool(void);
-
-/**
- * implement : 방을 만드는 클라이언트 확인
- * input :
- * output :
-*/
-void room_maker_epoll(void);
+int init_room_pool(pool_room*);
 
 /**
  * implement : 서버에 접속한 클라이언트를 client_pool에 추가

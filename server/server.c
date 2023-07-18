@@ -29,7 +29,7 @@ void init_client_pool(){
 }
 
 void init_room_pool(){
-
+    sem_init(POOL_ROOM.mutex,1);
 }
 
 void init_program(){
@@ -45,10 +45,6 @@ void terminate_program(MYSQL *mysql){
 }
 
 /* INITIALIZATION AND TERMINATION */
-
-
-
-
 
 int main(){
 
