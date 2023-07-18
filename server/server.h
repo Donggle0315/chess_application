@@ -48,17 +48,27 @@ server.c - prototypes adn definitions for Chess Aplication
 #define TRUE 1
 #define FALSE 0
 
+#define PLAYER1 11
+#define PLAYER2 12
+#define SPECTATOR 13
+
 /* Simplifies calls to bind(), connect(), and accept() */
 typedef struct sockaddr SA;
+
+typedef struct user_information{
+    char user_id[MAX_LEN];
+}user_information;
 
 typedef struct POOL_CLIENT{
     int conn_count;
     int maxfd;
     fd_set read_set;
-    fd_ser ready_set;
+    fd_set ready_set;
     int nready;
     int maxi;
     int clientfd[FD_SETSIZE];
+    user_information client_info[FD_SETSIZE];
+    int has_login[FD_SETSIZE];//로그인 되어있으면 FALSE, 없으면 TRUE
 } pool_client;
 
 typedef struct ROOM_OPTION{
@@ -76,6 +86,11 @@ typedef struct POOL_ROOM{
     sem_t mutex;
 } pool_room;
 
+typedef struct GAME_INFORMATION{
+    int player[MAX_PLAYER];
+    int order;//몇번째 플레이어가 플레이할 차례인지
+}GAME_INFORMATION;
+
 /* Prototypes of Functions */
 
 
@@ -89,121 +104,115 @@ MYSQL* init_mysql();
 /**
  * implement : client pool 초기화
  * input : pool_client pointer
- * output : int 성공(1)/실패(0)
+ * output : int 성공(TRUE)/실패(FALSE)
 */
 int init_client_pool(pool_client*);
 
 /**
  * implement : room pool 초기화
  * input : pool_room pointer
- * output : int 성공(1)/실패(0)
+ * output : int 성공(TRUE)/실패(FALSE)
 */
 int init_room_pool(pool_room*);
 
 /**
  * implement : 서버에 접속한 클라이언트를 client_pool에 추가
- * input :
- * output :
+ * input : client_pool pointer, int client_fd
+ * output : void
 */
-void add_client_to_pool();
+void add_client_to_pool(pool_client*, int);
 
 /**
- * implement : 클라이언트의 요청에 따라 맞는 함수들을 호출
- * input :
- * output :
+ * implement : 클라이언트의 요청에 따라 맞는 함수들을 호출 : LOG,REG,CRE,FET,ENT,EXT
+ * input : client_pool pointer,room_pool pointer, mysql pointer
+ * output : int 성공(TRUE)/실패(FALSE)
 */
-void handle_client();
+int handle_client(pool_client*, pool_room*, MYSQL*);
 
 /**
  * implement : 클라이언트의 로그인
- * input :
- * output :
+ * 클라이언트로부터 아이디/비밀번호를 받아와서 확인 -> 아이디와 비번 일치하면 유저한테 성공했다고 보내고 true 리턴 / 실패하면 유저에게 실패했다고 보내고 false 리턴
+ * input : mysql pointer
+ * output : int 성공(TRUE)/실패(FALSE)
 */
-void client_login();
+int client_login(MYSQL*);
 
 /**
- * implement : 클라이언트의 회원가입
- * input :
- * output :
+ * implement : 클라이언트의 회원가입 : 클라이언트로부터 아이디/비번 받아옴 -> sql에서 중복 확인 -> 중복이 없다면 sql에 업데이트하고 클라이언트에 성공 여부 알려고 true 리턴
+ * input : mysql pointer
+ * output : int 성공(TRUE)/실패(FALSE)
 */
-void client_register();
+int client_register(MYSQL*);
 
 /**
- * implement : 클라이언트의 방 만들기 및 방 설정
- * input :
- * output :
+ * implement : 클라이언트의 방 만들기 및 방 설정 : add_room_to_pool() 호출 -> 스레드 생성해서 room_main() 실행
+ * input : room_pool pointer
+ * output : int 성공(TRUE)/실패(FALSE)
 */
-void create_room();
+int create_room(pool_room*);
 
 /**
- * implement : 서버에 만들어진 방을 room_pool에 추가
- * input :
- * output :
+ * implement : 서버에 만들어진 방을 room_pool에 추가 : room_option을 초기화 
+ * input : void 
+ * output : int 성공(TRUE)/실패(FALSE)
 */
-void add_room_to_pool();
+int add_room_to_pool();
 
 /**
- * implement : 요청된 방 정보를 room_pool에서 가지고 옴
- * input :
- * output :
+ * implement : 전체 방 정보를 클라이언트로부터 받아서, room_pool에서 찾아서 클라이언트에게 전송
+ * input : void
+ * output : int 성공(TRUE)/실패(FALSE)
 */
-void fetch_information();
+int fetch_information();
 
 /**
  * implement : 방에 들어감
  * input :
  * output :
 */
-void enter_room();
+void enter_room(); //보류
 
 /**
- * implement : 클라이언트가 서버 연결을 끊는다
- * input :
- * output :
+ * implement : 클라이언트가 서버 연결을 끊는다 : client_pool에서 해당 클라이언트 정보를 삭제함, Pool 업데이트
+ * input : pool_client pointer, client_fd
+ * output : int 성공(TRUE)/실패(FALSE)
 */
-void exit_clien();
+int exit_client(pool_client*, int);
 
 /**
- * implement : 방을 관리하는 메인함수
- * input :
+ * implement : 방을 관리하는 메인함수(스레드에서 실행) : 
+ * input : pool_room pointer
  * output :
 */
-void room_main();
+void* room_main(void*);
 
 /**
- * implement : 방 정보 초기화
- * input :
- * output :
+ * implement : 방 정보 초기화 : 체스와 관련된 코드를 실행, GAME_INFORMATION 초기화
+ * input : GAME_INFORMATION pointer
+ * output :int 성공(TRUE)/실패(FALSE)
 */
-void init_room();
+int init_room(GAME_INFORMATION*);
 
 /**
- * implement : 방에 들어오는 클라이언트와의 통신을 위한 함수
- * input :
- * output :
+ * implement : accept 된 player를 GAME_INFORMATION에 추가, 역할 부여(p1, p2, 관전)
+ * input : GAME_INFORMATION*
+ * output :int 성공(TRUE)/실패(FALSE)
 */
-void room_enter_epoll();
-
-/**
- * implement : accept 된 player를 player_pool에 추가, 역할 부여(p1, p2)
- * input :
- * output :
-*/
-void add_player();
+int add_player(GAME_INFORMATION*);
 
 /**
  * implement : 플레이어의 역할을 변경
  * input :
  * output :
 */
-void change_player_role();
+void change_player_role(); //보류
 
 /**
  * implement : 방 설정을 변경
  * input :
  * output :
 */
-void change_room_rule();
+void change_room_rule(); //보류
 
 /**
  * implement : 게임을 시작하는 함수
@@ -213,11 +222,11 @@ void change_room_rule();
 void start_game();
 
 /**
- * implement : 게임이 종료된 후, 해당 방을 제거하기 위함
- * input :
- * output :
+ * implement : 게임이 종료된 후, 해당 방을 제거하기 위함 : room_pool에서 해당 방 제거, pthread_exit() 호출
+ * input : pool_room pointer
+ * output : void
 */
-void exit_room();
+void exit_room(pool_room*);
 
 
 
