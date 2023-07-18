@@ -29,13 +29,47 @@ server.c - prototypes adn definitions for Chess Aplication
 #include <netdb.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <sys/epoll.h>
+#include <mysql/mysql.h>
 
 /* Define macro functions */
 #define TMP 1024
+#define PORT 12345
+#define MAX_CLIENT 100
+#define MAX_ROOM 100
+#define MAX_EVENTS 100
+#define MAX_LEN 2048
 
+#define MYSQL_HOST "localhost"
+#define MYSQL_USER "root"
+#define MYSQL_PW "wasdup@1017"
+#define MYSQL_DB "chess_db"
+#define MYSQL_PORT 23456
+
+#define TRUE 1
+#define FALSE 0
 
 /* Simplifies calls to bind(), connect(), and accept() */
 typedef struct sockaddr SA;
+
+typedef struct POOL_CLIENT{
+
+} pool_client;
+
+typedef struct ROOM_OPTION{
+    int room_id;
+    int roomfd;
+    char name[50];
+    int max_user_count;
+    int cur_user_count;
+    int time;
+    struct sockaddr_storage address;
+} room_option;
+
+typedef struct POOL_ROOM{
+    room_option room[MAX_ROOM];
+    sem_t mutex;
+} pool_room;
 
 /* Prototypes of Functions */
 
