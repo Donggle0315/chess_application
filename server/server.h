@@ -55,7 +55,7 @@ typedef struct POOL_CLIENT{
     int conn_count;
     int maxfd;
     fd_set read_set;
-    fd_ser ready_set;
+    fd_set ready_set;
     int nready;
     int maxi;
     int clientfd[FD_SETSIZE];
