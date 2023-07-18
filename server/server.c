@@ -58,7 +58,7 @@ int main(){
     mysql = init_mysql();
 
     // open_clientfd like function
-
+    
     // accept
     
     int epollfd;
@@ -100,22 +100,22 @@ void handle_clients(struct epoll_event *event){
     int clientfd = event->data.fd;
     int len = read(clientfd, data, MAX_LEN); // change this later to prevent short-counts
 
-    if(!strcmp(data, "login")){
+    if(!strcmp(data, "LOG")){
         user_login();
     }
-    else if(!strcmp(data, "register")){
+    else if(!strcmp(data, "REG")){
         user_register();
     }
-    else if(!strcmp(data, "create room")){
+    else if(!strcmp(data, "CRE")){
         create_room();
     }
-    else if(!strcmp(data, "fetch information")){
+    else if(!strcmp(data, "FET")){
         fetch_information();
     }
-    else if(!strcmp(data, "enter room")){
+    else if(!strcmp(data, "ENT")){
         enter_room();
     }
-    else if(!strcmp(data, "exit client")){
+    else if(!strcmp(data, "EXT")){
         exit_client();
     }
 }
