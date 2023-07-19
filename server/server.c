@@ -39,7 +39,7 @@ int init_client_pool(pool_client *pc, int listenfd){
 }
 
 int init_room_pool(pool_room *pr){
-    sem_init(&pr->mutex, 0, 1);
+    return sem_init(&pr->mutex, 0, 1);
 }
 
 
@@ -120,7 +120,7 @@ int main(){
         for(int i=0; (i<=pc.maxi) && (pc.nready>0); i++){
             int clientfd = pc.clientfd[i];
             int len = read(clientfd, buf, MAX_LEN);
-            handle_clients(&pc, &pr, &mysql, buf);
+            handle_client(&pc, &pr, &mysql, buf);
         }
     }
 
@@ -153,7 +153,7 @@ void add_client_to_pool(pool_client *pc, int fd){
         fprintf(stderr, "client number reached MAX_CLIENT");
 }
 
-int handle_clients(pool_client *pc, pool_room *pr, MYSQL *mysql, char buf[]){
+int handle_client(pool_client *pc, pool_room *pr, MYSQL *mysql, char buf[]){
     if(!strcmp(buf, "LOG")){
         user_login();
     }
@@ -175,11 +175,11 @@ int handle_clients(pool_client *pc, pool_room *pr, MYSQL *mysql, char buf[]){
 }
 
 // login and register -> use mysql db
-void login(){
-
+int user_login(MYSQL *mysql, char buf[]){
+    
 }
 
-void user_register(){
+int user_register(MYSQL *mysql, char buf[]){
 
 }
 

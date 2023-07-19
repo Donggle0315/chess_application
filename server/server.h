@@ -129,14 +129,14 @@ int handle_client(pool_client*, pool_room*, MYSQL*, char[]);
  * input : mysql pointer
  * output : int 성공(TRUE)/실패(FALSE)
 */
-int client_login(MYSQL*);
+int user_login(MYSQL*, char[]);
 
 /**
  * implement : 클라이언트의 회원가입 : 클라이언트로부터 아이디/비번 받아옴 -> sql에서 중복 확인 -> 중복이 없다면 sql에 업데이트하고 클라이언트에 성공 여부 알려고 true 리턴
  * input : mysql pointer
  * output : int 성공(TRUE)/실패(FALSE)
 */
-int client_register(MYSQL*);
+int user_register(MYSQL*, char[]);
 
 /**
  * implement : 클라이언트의 방 만들기 및 방 설정 : add_room_to_pool() 호출 -> 스레드 생성해서 room_main() 실행
