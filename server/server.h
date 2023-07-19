@@ -44,8 +44,6 @@ server.c - prototypes adn definitions for Chess Aplication
 #define MYSQL_USER "root"
 #define MYSQL_PW "wasdup@1017"
 #define MYSQL_DB "chess_db"
-#define MYSQL_PORT 23456
-
 #define TRUE 1
 #define FALSE 0
 
@@ -99,10 +97,10 @@ MYSQL* init_mysql();
 
 /**
  * implement : client pool 초기화
- * input : pool_client pointer
+ * input : pool_client pointer, listenfd
  * output : int 성공(TRUE)/실패(FALSE)
 */
-int init_client_pool(pool_client*);
+int init_client_pool(pool_client*, int);
 
 /**
  * implement : room pool 초기화

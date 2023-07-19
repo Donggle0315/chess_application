@@ -1,7 +1,6 @@
 // include of user h
 #include "server.h"
 
-
 /* INITIALIZATION AND TERMINATION */
 MYSQL *init_mysql(){
     MYSQL *mysql;
@@ -39,10 +38,9 @@ int init_client_pool(pool_client *pc, int listenfd){
     return TRUE;
 }
 
-void init_room_pool(){
-    sem_init(POOL_ROOM.mutex, 1);
+int init_room_pool(pool_room *pr){
+    sem_init(&pr->mutex, 0, 1);
 }
-
 
 
 void terminate_program(MYSQL *mysql){
@@ -56,15 +54,48 @@ int main(){
 
     // initialize MYSQL struct
     MYSQL *mysql;
-    init_client_pool();
-    init_room_pool();
-
     mysql = init_mysql();
 
     // open_clientfd like function
-    
+    struct addrinfo *listp, *p;
+    struct addrinfo hints;
+    int listenfd;
+
+    memset(&hints, 0, sizeof(struct addrinfo));
+    hints.ai_socktype = SOCK_STREAM;
+    hints.ai_flags = AI_PASSIVE; // address suitable for server
+    hints.ai_flags |=  AI_ADDRCONFIG; // returns valid addresses
+    hints.ai_flags |= AI_NUMERICSERV; // only accept number ip address
+
+    getaddrinfo(NULL, PORT, &hints, &listp);
+
+    for(p=listp; p != NULL; p->ai_next){
+        if((listenfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) < 0)
+            continue;
+        if(bind(listenfd, p->ai_addr, p->ai_addrlen) == 0){
+            break;
+        }
+        close(listenfd);
+    }
+
+    freeaddrinfo(listp);
+    if(!p) return -1;
+
+    if(listen(listenfd, 20) < 0){
+        close(listenfd);
+        return -1;
+    }
+
+
+
     // accept
     
+    pool_client pc;
+    pool_room pr;
+
+    init_client_pool(&pc, listenfd);
+    init_room_pool(&pr);
+
     int epollfd;
     struct epoll_event event[MAX_EVENTS];
 
