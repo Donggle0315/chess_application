@@ -117,11 +117,18 @@ int init_room_pool(pool_room*);
 void add_client_to_pool(pool_client*, int);
 
 /**
+ * implement : 들어온 buffer을 '\0'을 기준으로 나눠서 각 부분의 시작을 가리키는 포인터 배열을 만든다
+ * input : strchr로 '\0'를 찾고, 이 부분에 널 문자를 넣어서 분리한다.
+ * output : void
+*/
+void parseline(char*, char**);
+
+/**
  * implement : 클라이언트의 요청에 따라 맞는 함수들을 호출 : LOG,REG,CRE,FET,ENT,EXT
  * input : client_pool pointer,room_pool pointer, mysql pointer
  * output : int 성공(TRUE)/실패(FALSE)
 */
-int handle_client(pool_client*, pool_room*, MYSQL*, char[]);
+int handle_client(pool_client*, pool_room*, MYSQL*, char[], int);
 
 /**
  * implement : 클라이언트의 로그인
@@ -129,14 +136,14 @@ int handle_client(pool_client*, pool_room*, MYSQL*, char[]);
  * input : mysql pointer
  * output : int 성공(TRUE)/실패(FALSE)
 */
-int user_login(MYSQL*, char[]);
+int user_login(MYSQL*, pool_client*, char**, int);
 
 /**
  * implement : 클라이언트의 회원가입 : 클라이언트로부터 아이디/비번 받아옴 -> sql에서 중복 확인 -> 중복이 없다면 sql에 업데이트하고 클라이언트에 성공 여부 알려고 true 리턴
  * input : mysql pointer
  * output : int 성공(TRUE)/실패(FALSE)
 */
-int user_register(MYSQL*, char[]);
+int user_register(MYSQL*, char**);
 
 /**
  * implement : 클라이언트의 방 만들기 및 방 설정 : add_room_to_pool() 호출 -> 스레드 생성해서 room_main() 실행

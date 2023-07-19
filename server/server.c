@@ -120,7 +120,7 @@ int main(){
         for(int i=0; (i<=pc.maxi) && (pc.nready>0); i++){
             int clientfd = pc.clientfd[i];
             int len = read(clientfd, buf, MAX_LEN);
-            handle_client(&pc, &pr, &mysql, buf);
+            handle_client(&pc, &pr, &mysql, buf, i);
         }
     }
 
@@ -153,12 +153,30 @@ void add_client_to_pool(pool_client *pc, int fd){
         fprintf(stderr, "client number reached MAX_CLIENT");
 }
 
-int handle_client(pool_client *pc, pool_room *pr, MYSQL *mysql, char buf[]){
+void parseline(char *buf, char **arguments){
+    char *delim;
+    int argc = 0;
+
+    while(delim = strchr(buf, '\0')){
+        arguments[argc++] = buf;
+        buf = delim+1; // search next part
+    }
+
+    arguments[argc] = NULL;
+
+}
+int handle_client(pool_client *pc, pool_room *pr, MYSQL *mysql, char buf[], int client){
+    char *arguments[5];
+
+    parseline(buf, arguments);
+    
     if(!strcmp(buf, "LOG")){
-        user_login();
+        // arguments 0 = id, 1 = pw
+        user_login(mysql, pc, arguments, client);
     }
     else if(!strcmp(buf, "REG")){
-        user_register();
+        // arguments 0 = id, 1 = pw
+        user_register(mysql, arguments);
     }
     else if(!strcmp(buf, "CRE")){
         create_room();
@@ -175,11 +193,29 @@ int handle_client(pool_client *pc, pool_room *pr, MYSQL *mysql, char buf[]){
 }
 
 // login and register -> use mysql db
-int user_login(MYSQL *mysql, char buf[]){
-    
+int user_login(MYSQL *mysql, pool_client *pc, char  **arguments, int client){
+    MYSQL_RES *res;
+    char buf[100];
+    sprintf(buf, "select %s from user", arguments[0]);
+
+    if(mysql_query(mysql, buf) != 0){
+        fprintf(stderr, "error has occured on mysql_query in login\n");
+    }
+
+    res = mysql_store_result(mysql);
+    if(res == NULL){
+        fprintf(stderr, "failed to retrieve in mysql_store_result\n");
+        return FALSE;
+    }
+    MYSQL_ROW row = mysql_fetch_row(res);
+    if(!strcmp(row[1], arguments[1])){
+        pc->has_login[client] = TRUE;
+        strncpy(pc->client_info[client].user_id, row[0], 20);
+        return TRUE;
+    }
 }
 
-int user_register(MYSQL *mysql, char buf[]){
+int user_register(MYSQL *mysql, char **arguements){
 
 }
 
