@@ -34,7 +34,7 @@ server.c - prototypes adn definitions for Chess Aplication
 
 /* Define macro functions */
 #define TMP 1024
-#define PORT 12345
+#define PORT "12345"
 #define MAX_CLIENT 100
 #define MAX_ROOM 100
 #define MAX_EVENTS 100
@@ -174,4 +174,4 @@ void enter_room(); //보류
 int exit_client(pool_client*, int);
 
 
-#endif __SERVER_H__
+#endif

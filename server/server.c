@@ -67,7 +67,7 @@ int main(){
     hints.ai_flags |=  AI_ADDRCONFIG; // returns valid addresses
     hints.ai_flags |= AI_NUMERICSERV; // only accept number ip address
 
-    getaddrinfo(NULL, PORT, &hints, &listp);
+    getaddrinfo(NULL, itoa(PORT), &hints, &listp);
 
     for(p=listp; p != NULL; p->ai_next){
         if((listenfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) < 0)
@@ -96,30 +96,28 @@ int main(){
     init_client_pool(&pc, listenfd);
     init_room_pool(&pr);
 
-    int epollfd;
-    struct epoll_event event[MAX_EVENTS];
-
-    epollfd = epoll_create(1);
-    epoll_ctl(); // add listening descriptor
-
-    int event_count;
+    struct sockaddress_storage *clientaddr;
+    int clientlen = sizeof(struct sockaddr_storage);
     while(1){
-        event_count = epoll_wait();
+        pc.ready_set = pc.read_set;
+        pc.nready = select(pc.maxfd+1, &pc.ready_set, NULL, NULL, NULL);
         // if listenfd
-        if(event_count < 0){
+        if(pc.nready < 0){
             // error
-            printf("Error in epoll_wait\n");
+            printf("Error in select\n");
             return;
         } 
 
         // handle events
-        for(int i=0; i<event_count; i++){
-            if(event[i].data.fd == listenfd){
-                add_client_to_pool();
+        for(int i=0; i<pc.nready; i++){
+            if(FD_ISSET(listenfd, &pc.ready_set)){
+                int connfd = accept(listenfd, (SA*)clientaddr, clientlen);
+                add_client_to_pool(&pc, connfd);
+                fprintf(stdout, "added client in fd: %d", connfd);
                 continue;
             }
             else{
-                handle_clients();
+                handle_clients(&pc, &pr, &mysql);
             }
         }
 
@@ -130,7 +128,32 @@ int main(){
     return 0;
 }
 
-void handle_clients(struct epoll_event *event){
+void add_client_to_pool(pool_client *pc, int fd){
+
+    // find appropriate place to put index
+    int i;
+    (pc->nready)--;
+    for(i=0; i<MAX_CLIENT; i++){
+        if(pc->clientfd[i] == -1){
+            break;
+        }
+    }
+
+    pc->clientfd[i] = fd;
+    pc->has_login[i] = FALSE;
+    FD_SET(fd, &pc->read_set);
+
+    if(fd > pc->maxfd)
+        pc->maxfd = fd;
+    if(i > pc->maxi)
+        pc->maxi = i;
+    (pc->conn_count)++;
+
+    if(i==MAX_CLIENT)
+        fprintf(stderr, "client number reached MAX_CLIENT");
+}
+
+int handle_clients(pool_client *pc, pool_room *pr, MYSQL *mysql){
     char data[MAX_LEN];
     int clientfd = event->data.fd;
     int len = read(clientfd, data, MAX_LEN); // change this later to prevent short-counts
