@@ -109,18 +109,19 @@ int main(){
         } 
 
         // handle events
-        for(int i=0; i<pc.nready; i++){
-            if(FD_ISSET(listenfd, &pc.ready_set)){
-                int connfd = accept(listenfd, (SA*)clientaddr, clientlen);
-                add_client_to_pool(&pc, connfd);
-                fprintf(stdout, "added client in fd: %d", connfd);
-                continue;
-            }
-            else{
-                handle_clients(&pc, &pr, &mysql);
-            }
+        if(FD_ISSET(listenfd, &pc.ready_set)){
+            int connfd = accept(listenfd, (SA*)clientaddr, clientlen);
+            add_client_to_pool(&pc, connfd);
+            fprintf(stdout, "added client in fd: %d", connfd);
+            continue;
         }
 
+        char buf[MAX_LEN];
+        for(int i=0; (i<=pc.maxi) && (pc.nready>0); i++){
+            int clientfd = pc.clientfd[i];
+            int len = read(clientfd, buf, MAX_LEN);
+            handle_clients(&pc, &pr, &mysql, buf);
+        }
     }
 
 
@@ -129,7 +130,6 @@ int main(){
 }
 
 void add_client_to_pool(pool_client *pc, int fd){
-
     // find appropriate place to put index
     int i;
     (pc->nready)--;
@@ -153,27 +153,23 @@ void add_client_to_pool(pool_client *pc, int fd){
         fprintf(stderr, "client number reached MAX_CLIENT");
 }
 
-int handle_clients(pool_client *pc, pool_room *pr, MYSQL *mysql){
-    char data[MAX_LEN];
-    int clientfd = event->data.fd;
-    int len = read(clientfd, data, MAX_LEN); // change this later to prevent short-counts
-
-    if(!strcmp(data, "LOG")){
+int handle_clients(pool_client *pc, pool_room *pr, MYSQL *mysql, char buf[]){
+    if(!strcmp(buf, "LOG")){
         user_login();
     }
-    else if(!strcmp(data, "REG")){
+    else if(!strcmp(buf, "REG")){
         user_register();
     }
-    else if(!strcmp(data, "CRE")){
+    else if(!strcmp(buf, "CRE")){
         create_room();
     }
-    else if(!strcmp(data, "FET")){
+    else if(!strcmp(buf, "FET")){
         fetch_information();
     }
-    else if(!strcmp(data, "ENT")){
+    else if(!strcmp(buf, "ENT")){
         enter_room();
     }
-    else if(!strcmp(data, "EXT")){
+    else if(!strcmp(buf, "EXT")){
         exit_client();
     }
 }

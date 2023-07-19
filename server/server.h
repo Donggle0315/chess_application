@@ -121,7 +121,7 @@ void add_client_to_pool(pool_client*, int);
  * input : client_pool pointer,room_pool pointer, mysql pointer
  * output : int 성공(TRUE)/실패(FALSE)
 */
-int handle_client(pool_client*, pool_room*, MYSQL*);
+int handle_client(pool_client*, pool_room*, MYSQL*, char[]);
 
 /**
  * implement : 클라이언트의 로그인
