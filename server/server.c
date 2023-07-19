@@ -24,20 +24,26 @@ MYSQL *init_mysql(){
     return mysql;
 }
 
-void init_client_pool(){
+int init_client_pool(pool_client *pc, int listenfd){
+    pc->conn_count = 0;
+    pc->maxfd = listenfd;
 
+    FD_ZERO(&pc->read_set);
+    FD_SET(listenfd, &pc->read_set);
+
+    for(int i=0; i<MAX_CLIENT; i++){
+        pc->clientfd[i] = -1;
+        pc->has_login[i] = FALSE;
+    }
+
+    return TRUE;
 }
 
 void init_room_pool(){
-    sem_init(POOL_ROOM.mutex,1);
+    sem_init(POOL_ROOM.mutex, 1);
 }
 
-void init_program(){
-    // connect with db
 
-    init_client_pool();
-    init_room_pool();
-}
 
 void terminate_program(MYSQL *mysql){
     mysql_close(mysql);
@@ -50,7 +56,9 @@ int main(){
 
     // initialize MYSQL struct
     MYSQL *mysql;
-    init_program();
+    init_client_pool();
+    init_room_pool();
+
     mysql = init_mysql();
 
     // open_clientfd like function
