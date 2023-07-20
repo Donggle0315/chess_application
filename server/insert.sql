@@ -1,0 +1,1 @@
+insert into user_login_info(id, pw, username) values ("piwoo1017", "qwer", "puurun");
