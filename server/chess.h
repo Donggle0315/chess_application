@@ -40,7 +40,7 @@ typedef struct coordi{
 typedef struct chess_board{
     //기본 정보들
     int board[ROW][COL];
-    int** board_copy;
+    int board_copy[ROW][COL];
     int white_death[PEICE_CNT];
     int black_death[PEICE_CNT];
     //unsinged char** board_history;
@@ -69,9 +69,9 @@ typedef struct chess_board{
 chess_board* initBoard();
 
 /**
- * implement : 
- * input :
- * output :
+ * implement : 지워도 될거 같음
+ * input : x
+ * output : x
 */
 void gameStart();
 
@@ -175,6 +175,13 @@ void afterMove(chess_board*,int,int);
  * output :
 */
 void isFinish();
+
+/**
+ * implement : 현재 보드를 복사하여 저장하는 함수
+ * input : chess_board pointer
+ * output : x
+*/
+void copyBoard(chess_board*);
 
 /**
  * implement : 본인의 왕이 체크 당했는지를 확인하는 함수

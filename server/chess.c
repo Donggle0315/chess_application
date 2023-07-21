@@ -277,8 +277,25 @@ void afterMove(chess_board* b,int fr, int fc){
     }
 }
 
-void isFinish(){
+bool isFinish(chess_board* b){
+    int false_flag=false;
 
+    for(int i=0;i<ROW;i++){
+        for(int j=0;j<COL;j++){
+
+        }
+    }
+}
+
+void copyBoard(chess_board* b){
+    for(int i=0;i<ROW;i++){
+        for(int j=0;j<COL;j++){
+            changeTurn(b);
+            if(getPieceColor(b->board[i][j]==b->player_turn)){
+            }
+            b->board_copy[i][j]=b->board[i][j];
+        }
+    }
 }
 
 bool isCheck(chess_board* b){
