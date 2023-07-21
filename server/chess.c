@@ -199,9 +199,64 @@ bool canMove(chess_board* b, int sr, int sc, int fr, int fc){
     return false;
 }
 
-void movePiece(){
+int movePiece(chess_board* b,int sr,int sc, int fr, int fc, bool option){
+    int deathCode=BLANK;
+    if(b->en_passant_flag){//앙파상인 경우
+        if((b->board[sr][sc]%10)==6 && abs(sc-fc)==1 && b->board[fr][fc]==0){
+            if(b->player_turn==BLACK){
+                b->board[b->last_move[2]+1][b->last_move[3]]=b->board[b->last_move[2]][b->last_move[3]];
+                b->board[b->last_move[2]][b->last_move[3]]=BLANK;
+            }
+            else if(b->player_turn==WHITE){
+                b->board[b->last_move[2]-1][b->last_move[3]]=b->board[b->last_move[2]][b->last_move[3]];
+                b->board[b->last_move[2]][b->last_move[3]]=BLANK;
+            }
+        }
+    }
 
-}
+    if(b->castling_flag){//캐슬링
+        if(sr==0 && sc==4 && fr==0 && fc==1){
+            b->board[0][2]=b->board[0][0];
+            b->board[0][0]=BLANK;
+        }
+        else if(sr==0 && sc==4 && fr==0 && fc==6){
+            b->board[0][5]=b->board[0][7];
+            b->board[0][7]=BLANK;
+        }
+        else if(sr==7 && sc==4 && fr==7 && fc==1){
+            b->board[7][2]=b->board[7][0];
+            b->board[7][0]=BLANK;
+        }
+        else if(sr==7 && sc==4 && fr==7 && fc==6){
+            b->board[7][5]=b->board[7][7];
+            b->board[7][7]=BLANK;
+        }
+    }
+
+    //말을 잡은 경우 deathCode에 해당 말 정보 등록
+    if(getPieceColor(b->board[fr][fc])!=BLANK) deathCode=b->board[fr][fc];
+
+    //말 이동
+    b->board[fr][fc]=b->board[sr][sc];
+    b->board[sr][sc]=BLANK;
+
+    if(option){//캐슬링 확인
+        b->last_move[0]=sr;
+        b->last_move[1]=sc;
+        b->last_move[2]=fr;
+        b->last_move[3]=fc;
+        b->last_move[4]=b->board[fr][fc];
+
+        if(sr==0 && sc==0) b->castling_check[0]=true;//LEFT B_ROOK
+        else if(sr==0 && sc==4) b->castling_check[1]=true;//B_KING
+        else if(sr==0 && sc==7) b->castling_check[2]=true;//RIGHT B_ROOK
+        else if(sr==7 && sc==0) b->castling_check[3]=true;//LEFT W_ROOK
+        else if(sr==7 && sc==4) b->castling_check[4]=true;//W_KING
+        else if(sr==7 && sc==7) b->castling_check[5]=true;//RIGHT B_ROOK
+    }
+
+    return deathCode;
+}   
 
 /* 게임 진행 여부를 확인하는 함수들 */
 
@@ -211,24 +266,54 @@ int getPieceColor(int piece){
     return BLANK;
 }
 
-void afterMove(){
-
+void afterMove(chess_board* b,int fr, int fc){
+    if(b->board[fr][fc]%10==6){//도착한 말이 폰일 경우
+        int check_row=(b->player_turn==BLACK) ? 7 : 0;
+        if(fr==check_row){
+            b->promotion_r=fr;
+            b->promotion_c=fc;
+            //drawPromotion(b->player_turn); //need : 추가 구현
+        }
+    }
 }
 
 void isFinish(){
 
 }
 
-void isCheck(){
+bool isCheck(chess_board* b){
+    int k_row, k_col, color;
+    bool flag=false;
+    color=(b->player_turn==WHITE)?WHITE:BLACK;
+
+    //본인 왕의 위치를 찾음
+    for(int i=0;i<ROW;i++){
+        for(int j=0;j<COL;j++){
+            if(b->board[i][j]%10==5 && getPieceColor(b->board[i][j])==color){//자신의 왕일 때
+                k_row=i;
+                k_col=j;
+            }
+        }
+    }
+    //상대방 말이 본인의 왕의 위치로 이동할 수 있으면 true
+    for(int i=0;i<ROW;i++){
+        for(int j=0;j<COL;j++){
+            changeTurn(b);
+            if(canMove(b,i,j,k_row,k_col)){
+                flag=true;
+            }
+            changeTurn(b);
+        }
+    }
+    return flag;
+}
+
+void getMoveablePosition(chess_board* b, int r, int c){
 
 }
 
-void getMoveablePosition(){
-
-}
-
-void changeTurn(){
-
+void changeTurn(chess_board* b){
+    b->player_turn=(b->player_turn==WHITE ? BLACK : WHITE);
 }
 
 /* special rules */
@@ -240,8 +325,32 @@ void castling(){
 
 }
 
-void forCastling(){
+bool forCastling(chess_board* b,int r, int c){
+    int krow,kcol,kid;//king에 대한 정보
+    if(b->board[r][c]!=BLANK) return false;//해당 위치에 말이 있는 경우
+    if(b->player_turn==WHITE){//W_KING location
+        krow=7;
+        kcol=4;
+    }
+    else{//B_KING location
+        krow=0;
+        kcol=4;
+    }
 
+    //해당 위치로 왕 이동
+    b->board[r][c]=b->board[krow][kcol];
+    kid=b->board[krow][kcol];
+    b->board[krow][kcol]=BLANK;
+
+    if(isCheck(b)){//체크가 된다면 원상복구
+        b->board[r][c]=BLANK;
+        b->board[krow][kcol]=kid;
+        return false;
+    }
+    //원상복구
+    b->board[r][c]=BLANK;
+    b->board[krow][kcol]=kid;
+    return true;
 }
 
 void enPassant(){

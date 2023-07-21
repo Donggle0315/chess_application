@@ -50,9 +50,9 @@ typedef struct chess_board{
     //special rule 변수
     int promotion_r;
     int promotion_c;
-    coordi castling_check;
+    bool castling_check[6];
     bool castling_flag;
-    bool last_move[4];
+    bool last_move[5];
     bool en_passant_flag;
     //게임 시간
     int black_time;
@@ -147,11 +147,11 @@ bool handleKing(chess_board*,int,int,int,int);
 bool canMove(chess_board*,int,int,int,int);
 
 /**
- * implement : 
- * input :
- * output :
+ * implement : 말을 움직이는 함수로, 특수 규칙에 따라 추가적인 움직임 발생 가능
+ * input : chess_board pointer, 시작 행(int), 시작 열(int), 도착 행(int), 도착 열(int), 캐슬링 옵션(bool)
+ * output : 죽은 말의 코드(int) : 죽은 말이 없을 경우 BLANK 리턴
 */
-void movePiece();
+int movePiece(chess_board*,int,int,int,int,bool);
 
 /* 게임 진행 여부를 확인하는 함수들 */
 
@@ -163,11 +163,11 @@ void movePiece();
 int getPieceColor(int);
 
 /**
- * implement : 
- * input :
- * output :
+ * implement : 움직이고 난 뒤, 프로모션 발생해야하는지 확인
+ * input : chess_board pointer, 도착 행(int), 도착 열(int)
+ * output : x
 */
-void afterMove();
+void afterMove(chess_board*,int,int);
 
 /**
  * implement : 
@@ -177,11 +177,11 @@ void afterMove();
 void isFinish();
 
 /**
- * implement : 
- * input :
- * output :
+ * implement : 본인의 왕이 체크 당했는지를 확인하는 함수
+ * input : chess_board pointer
+ * output : 왕이 체크당한다면 true를, 체크당하지 않았다면 false
 */
-void isCheck();
+bool isCheck(chess_board*);
 
 /**
  * implement : 
@@ -191,11 +191,11 @@ void isCheck();
 void getMoveablePosition();
 
 /**
- * implement : 
- * input :
- * output :
+ * implement : 플레이어 순서를 바꿔줌
+ * input : chess_board pointer
+ * output : x
 */
-void changeTurn();
+void changeTurn(chess_board*);
 
 
 /* special rules */
@@ -215,11 +215,11 @@ void promotion();
 void castling();
 
 /**
- * implement : 
- * input :
- * output :
+ * implement : 캐슬링 시에 왕이 해당 위치로 이동할 수 있는지 확인하는 함수
+ * input : chess_board pointer, 도착 행(int), 도착 열(int)
+ * output : 왕이 이동할 수 있다면 true, 이동할 수 없으면 false
 */
-void forCastling();
+bool forCastling(chess_board*,int,int);
 
 /**
  * implement : 
