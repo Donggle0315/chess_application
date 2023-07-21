@@ -1,5 +1,5 @@
 
-flags = -lpthread
+flags = -lpthread -I/opt/homebrew/Cellar/mysql/8.0.33_3/include
 
 server: server.o
 	gcc -o server server.o $(flags) `mysql_config --libs`
