@@ -278,13 +278,7 @@ void afterMove(chess_board* b,int fr, int fc){
 }
 
 bool isFinish(chess_board* b){
-    int false_flag=false;
-
-    for(int i=0;i<ROW;i++){
-        for(int j=0;j<COL;j++){
-
-        }
-    }
+    
 }
 
 void copyBoard(chess_board* b){
@@ -370,6 +364,26 @@ bool forCastling(chess_board* b,int r, int c){
     return true;
 }
 
-void enPassant(){
-
+void enPassant(chess_board* b,coordi* tmp,int last_row,int last_col){
+    if(b->player_turn==WHITE){
+        if(b->last_move[0]==1&&b->last_move[2]==3&&b->last_move[4]==B_PAWN){//마지막으로 움직임이 적팀 폰이 앞으로 두칸
+            if(last_row==3 && abs(last_col-(b->last_move[3]))==1){
+                b->en_passant_flag=true;
+                tmp->row=last_row-1;
+                tmp->col=b->last_move[3];
+                return;
+            }
+        }
+    }
+    else if(b->player_turn==BLACK){
+        if(b->last_move[0]==6&&b->last_move[2]==4&&b->last_move[4]==W_PAWN){//마지막으로 움직임이 적팀 폰이 앞으로 두칸
+            if(last_row==4 && abs(last_col-(b->last_move[3]))==1){
+                b->en_passant_flag=true;
+                tmp->row=last_row+1;
+                tmp->col=b->last_move[3];
+                return;
+            }
+        }
+    }
+    b->en_passant_flag=false;
 }

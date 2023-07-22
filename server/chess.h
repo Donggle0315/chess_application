@@ -54,6 +54,7 @@ typedef struct chess_board{
     bool castling_flag;
     bool last_move[5];
     bool en_passant_flag;
+
     //게임 시간
     int black_time;
     int white_time;
@@ -174,7 +175,7 @@ void afterMove(chess_board*,int,int);
  * input :
  * output :
 */
-void isFinish();
+bool isFinish(chess_board*);
 
 /**
  * implement : 현재 보드를 복사하여 저장하는 함수
@@ -229,10 +230,10 @@ void castling();
 bool forCastling(chess_board*,int,int);
 
 /**
- * implement : 
- * input :
- * output :
+ * implement : 앙파상이 가능한지를 확인해 주는 함수
+ * input : chess_board pointer, 앙파상 위치를 알려주는 좌표 pointer, 마지막 이동 열, 마지막 이동 행
+ * output : x
 */
-void enPassant();
+void enPassant(chess_board*, coordi*,int,int);
 
 #endif __CHESS_H__
