@@ -128,7 +128,7 @@ void parseline(char*, char**);
  * input : client_pool pointer,room_pool pointer, mysql pointer
  * output : int 성공(TRUE)/실패(FALSE)
 */
-int handle_client(pool_client*, pool_room*, MYSQL*, char[], int);
+int handle_client(pool_client*, pool_room*, MYSQL*, char[], int, char[]);
 
 /**
  * implement : 클라이언트의 로그인
@@ -164,7 +164,7 @@ int add_room_to_pool();
  * input : void
  * output : int 성공(TRUE)/실패(FALSE)
 */
-int fetch_information();
+int fetch_information(pool_room* char[]);
 
 /**
  * implement : 방에 들어감
