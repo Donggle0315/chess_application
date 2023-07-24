@@ -258,6 +258,17 @@ int movePiece(chess_board* b,int sr,int sc, int fr, int fc, bool option){
     return deathCode;
 }   
 
+void addDeathPiece(chess_board*b, int deathCode){
+    int enemy=(b->player_turn==WHITE)?BLACK:WHITE;
+    if(enemy==WHITE){
+        b->white_death[b->w_death_idx]=deathCode;
+        (b->w_death_idx)++;
+    }
+    else if(enemy==BLACK){
+        b->black_death[b->b_death_idx]=deathCode;
+        (b->b_death_idx)++;
+    }
+}
 /* 게임 진행 여부를 확인하는 함수들 */
 
 int getPieceColor(int piece){

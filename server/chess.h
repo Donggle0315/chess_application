@@ -156,6 +156,13 @@ bool canMove(chess_board*,int,int,int,int);
 */
 int movePiece(chess_board*,int,int,int,int,bool);
 
+/**
+ * implement : 죽은 말을 리스트에 추가하는 함수
+ * input : chess_board pointer, 죽은 말의 코드(int)
+ * output : x
+*/
+void addDeathPiece(chess_board*,int);
+
 /* 게임 진행 여부를 확인하는 함수들 */
 
 /**
