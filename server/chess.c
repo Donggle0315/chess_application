@@ -51,8 +51,8 @@ void gameStart(){
 
 chess_board* resetGame(chess_board* b){
     finishGame(b);
-    chess_board* b=initBoard();
-    return b;
+    chess_board* re=initBoard();
+    return re;
 }
 
 void undoGame(){
@@ -278,18 +278,90 @@ void afterMove(chess_board* b,int fr, int fc){
 }
 
 bool isFinish(chess_board* b){
-    
-}
-
-void copyBoard(chess_board* b){
+    bool false_flag=false;
+    int enemy_player=(b->player_turn==WHITE)?BLACK:WHITE;
     for(int i=0;i<ROW;i++){
         for(int j=0;j<COL;j++){
-            changeTurn(b);
-            if(getPieceColor(b->board[i][j]==b->player_turn)){
+            if(getPieceColor(b->board[i][j])==enemy_player){
+                coordi tmp_pos[64];
+                int tmp_idx=0;
+                changeTurn(b);
+                getMoveablePosition(b,i,j,&tmp_pos,&tmp_idx);
+                for(int k=0;k<tmp_idx;k++){
+                    chess_board* tmp_board=copyBoard(b);
+                    int tmp=movePiece(b,i,j,tmp_pos[k].row,tmp_pos[k].col,false);
+                    if(!isCheck(b)) false_flag=true;
+                    recover_board(b,tmp_board);
+                }
+                if(false_flag) return false;
             }
-            b->board_copy[i][j]=b->board[i][j];
         }
     }
+    return true;
+}
+
+chess_board* copyBoard(chess_board* b){
+    chess_board* tmp=(chess_board*)malloc(sizeof(chess_board));
+    for(int i=0;i<ROW;i++){
+        for(int j=0;j<COL;j++){
+            tmp->board[i][j]=b->board[i][j];
+        }
+    }
+    for(int i=0;i<PEICE_CNT;i++){
+        tmp->white_death[i]=b->white_death[i];
+        tmp->black_death[i]=b->black_death[i];
+    }
+
+    tmp->black_check=b->black_check;
+    tmp->white_check=b->white_check;
+    tmp->player_turn=b->player_turn;
+
+    tmp->promotion_r=b->promotion_r;
+    tmp->promotion_c=b->promotion_c;
+
+    for(int i=0;i<6;i++){
+        tmp->castling_check[i]=b->castling_check[i];
+    }
+    tmp->castling_flag=b->castling_flag;
+    for(int i=0;i<5;i++){
+        tmp->last_move[i]=b->last_move[i];
+    }
+    tmp->en_passant_flag=b->en_passant_flag;
+    tmp->black_time=b->black_time;
+    tmp->white_time=b->white_time;
+
+    return tmp;
+}
+
+void recover_board(chess_board* tmp, chess_board*b){
+    for(int i=0;i<ROW;i++){
+        for(int j=0;j<COL;j++){
+            tmp->board[i][j]=b->board[i][j];
+        }
+    }
+    for(int i=0;i<PEICE_CNT;i++){
+        tmp->white_death[i]=b->white_death[i];
+        tmp->black_death[i]=b->black_death[i];
+    }
+
+    tmp->black_check=b->black_check;
+    tmp->white_check=b->white_check;
+    tmp->player_turn=b->player_turn;
+
+    tmp->promotion_r=b->promotion_r;
+    tmp->promotion_c=b->promotion_c;
+
+    for(int i=0;i<6;i++){
+        tmp->castling_check[i]=b->castling_check[i];
+    }
+    tmp->castling_flag=b->castling_flag;
+    for(int i=0;i<5;i++){
+        tmp->last_move[i]=b->last_move[i];
+    }
+    tmp->en_passant_flag=b->en_passant_flag;
+    tmp->black_time=b->black_time;
+    tmp->white_time=b->white_time;
+
 }
 
 bool isCheck(chess_board* b){
@@ -319,8 +391,41 @@ bool isCheck(chess_board* b){
     return flag;
 }
 
-void getMoveablePosition(chess_board* b, int r, int c){
+void getMoveablePosition(chess_board* b, int row, int col,coordi** can_pos,int* idx){
+    for(int i=0;i<ROW;i++){
+        for(int j=0;j<COL;j++){
+            if(canMove(b,row,col,i,j)){
+                chess_board* tmp_board=copyBoard(b);
+                int tmp=movePiece(b,row,col,i,j,false);
+                if(isCheck(b)){
+                    can_pos[*idx]->row=i;
+                    can_pos[*idx]->col=j;
+                    (*idx)++;
+                }
+                recover_board(b,tmp_board);
+            }
+        }
+    }
 
+    coordi tmp_en_passant;
+    enPassant(b,&tmp_en_passant,row,col);
+    if(b->en_passant_flag){
+        can_pos[*idx]->row=tmp_en_passant.row;
+        can_pos[*idx]->col=tmp_en_passant.col;
+        (*idx)++;
+    }
+
+
+    int castling_idx=0;
+    coordi tmp_castling[2];
+    castling(b,row,col,&tmp_castling,&castling_idx);
+    if(b->castling_flag){
+        for(int i=0;i<castling_idx;i++){
+            can_pos[*idx]->row=tmp_castling[i].row;
+            can_pos[*idx]->col=tmp_castling[i].col;
+            (*idx)++;
+        }
+    }
 }
 
 void changeTurn(chess_board* b){
@@ -329,11 +434,41 @@ void changeTurn(chess_board* b){
 
 /* special rules */
 void promotion(){
-
+    return;
 }
 
-void castling(){
+void castling(chess_board* b,int row,int col,coordi** can_castling,int* idx){
+    if(b->player_turn==WHITE){
+        if(row==7 && col==4 && b->castling_check[4]==false){
+            if(!b->castling_check[3] && forCastling(b,7,3) && forCastling(b,7,2)&& forCastling(b,7,1)){
+                can_castling[*idx]->row=7;
+                can_castling[*idx]->col=1;
+                (*idx)++;
+            }
+            if(!b->castling_check[5] && forCastling(b,7,5) && forCastling(b,7,6)){
+                can_castling[*idx]->row=7;
+                can_castling[*idx]->col=6;
+                (*idx)++;
+            }
+        }
+    }
+    else if(b->player_turn==BLACK){
+        if(row==0 && col==4 && b->castling_check[1]==false){
+            if(!b->castling_check[0] && forCastling(b,0,3) && forCastling(b,0,2)&& forCastling(b,0,1)){
+                can_castling[*idx]->row=0;
+                can_castling[*idx]->col=1;
+                (*idx)++;
+            }
+            if(!b->castling_check[2] && forCastling(b,0,5) && forCastling(b,0,6)){
+                can_castling[*idx]->row=0;
+                can_castling[*idx]->col=6;
+                (*idx)++;
+            }
+        }
+    }
 
+    if((*idx)==0) b->castling_flag=false;
+    else b->castling_flag=true;
 }
 
 bool forCastling(chess_board* b,int r, int c){

@@ -62,4 +62,4 @@ void start_game();
 */
 void exit_room(pool_room*);
 
-#endif __ROOM_H__
+#endif
