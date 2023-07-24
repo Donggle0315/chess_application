@@ -39,6 +39,13 @@ int init_client_pool(pool_client *pc, int listenfd){
 }
 
 int init_room_pool(pool_room *pr){
+    for (int i=0; i<MAX_ROOM; i++){
+        pr->room[i].room_id = -1;
+        pr->room[i].roomfd = -1;
+        pr->room[i].max_user_count = -1;
+        pr->room[i].cur_user_count = -1;
+        pr->room[i].time = -1;
+    }
     return sem_init(&pr->mutex, 0, 1);
 }
 
@@ -117,10 +124,14 @@ int main(){
         }
 
         char buf[MAX_LEN];
+        char send_string[MAX_LEN];
         for(int i=0; (i<=pc.maxi) && (pc.nready>0); i++){
             int clientfd = pc.clientfd[i];
             int len = read(clientfd, buf, MAX_LEN);
-            handle_client(&pc, &pr, &mysql, buf, i);
+
+            handle_client(&pc, &pr, &mysql, buf, i, send_string);
+
+            write(clientfd, send_string, MAX_LEN);
         }
     }
 
@@ -165,7 +176,7 @@ void parseline(char *buf, char **arguments){
     arguments[argc] = NULL;
 
 }
-int handle_client(pool_client *pc, pool_room *pr, MYSQL *mysql, char buf[], int client){
+int handle_client(pool_client *pc, pool_room *pr, MYSQL *mysql, char buf[], int client, char send_string[]){
     char *arguments[5];
 
     parseline(buf, arguments);
@@ -179,23 +190,25 @@ int handle_client(pool_client *pc, pool_room *pr, MYSQL *mysql, char buf[], int 
         user_register(mysql, arguments);
     }
     else if(!strcmp(buf, "CRE")){
-        create_room();
+        create_room(pr);
     }
     else if(!strcmp(buf, "FET")){
-        fetch_information();
+        fetch_information(pr, send_string);
     }
     else if(!strcmp(buf, "ENT")){
         enter_room();
     }
     else if(!strcmp(buf, "EXT")){
-        exit_client();
+        exit_client(); // 굳이 여기 있을 필요가?
     }
+
+    return TRUE;
 }
 
 // login and register -> use mysql db
 int user_login(MYSQL *mysql, pool_client *pc, char  **arguments, int client){
     MYSQL_RES *res;
-    char buf[100];
+    char buf[256];
     sprintf(buf, "select %s from user", arguments[0]);
 
     if(mysql_query(mysql, buf) != 0){
@@ -215,31 +228,48 @@ int user_login(MYSQL *mysql, pool_client *pc, char  **arguments, int client){
     }
 }
 
-int user_register(MYSQL *mysql, char **arguements){
+int user_register(MYSQL *mysql, char **arguments){
+    MYSQL_RES *res;
+    char buf[256];
+    sprintf(buf, "insert into user_login_info(id, pw, username) values (%s, %s, %s)",arguments[0], arguments[1], arguments[2]);
 
+    if(mysql_query(mysql, buf) != 0){
+        fprintf(stderr, "error has occured on mysql_query in register\n");
+        return FALSE;
+    }
+    return TRUE;
 }
 
 
-void create_room(){
+int create_room(pool_room* pr){
     pthread_t tid;
     // make room and add it to pool
     add_room_to_pool();
     if(pthread_create(&tid, NULL, room_main, NULL) < 0){
         fprintf(stderr, "pthread_create failed\n");
     }
+    return TRUE;
 }
 
-void fetch_information(){
+int fetch_information(pool_room* pr, char send_string[]){
+    char *s = send_string;
+    int total_len = 0;
     // fetch information from room_pool
+    for(int i=0; i<MAX_ROOM; i++){
+        if(pr->room[i].room_id != -1){
+            sprintf(s, "%d %s %d %d %d %s", pr->room[i].room_id, pr->room[i].name, pr->room[i].max_user_count, pr->room[i].cur_user_count, pr->room[i].time, pr->room[i].address);
+        }
+    }
+    return TRUE;
 }
 
-void enter_room(){
+int enter_room(){
     // fetch selected room from room pool
     // cur_user_count < max_user_count -> connect to room
 
 }
 
-void exit_client(){
+int exit_client(){
 
 }
 
