@@ -42,7 +42,9 @@ typedef struct chess_board{
     int board[ROW][COL];
     int board_copy[ROW][COL];
     int white_death[PEICE_CNT];
+    int w_death_idx;
     int black_death[PEICE_CNT];
+    int b_death_idx;
     //unsinged char** board_history;
     bool black_check;
     bool white_check;
@@ -52,7 +54,7 @@ typedef struct chess_board{
     int promotion_c;
     bool castling_check[6];
     bool castling_flag;
-    bool last_move[5];
+    int last_move[5];
     bool en_passant_flag;
 
     //게임 시간
@@ -154,6 +156,13 @@ bool canMove(chess_board*,int,int,int,int);
 */
 int movePiece(chess_board*,int,int,int,int,bool);
 
+/**
+ * implement : 죽은 말을 리스트에 추가하는 함수
+ * input : chess_board pointer, 죽은 말의 코드(int)
+ * output : x
+*/
+void addDeathPiece(chess_board*,int);
+
 /* 게임 진행 여부를 확인하는 함수들 */
 
 /**
@@ -171,18 +180,25 @@ int getPieceColor(int);
 void afterMove(chess_board*,int,int);
 
 /**
- * implement : 
- * input :
- * output :
+ * implement : 게임이 끝나는지를 확인하는 함수
+ * input : chess_board pointer
+ * output : 게임이 끝나면 true, 게임이 끝나지 않으면 false 리턴
 */
 bool isFinish(chess_board*);
 
 /**
- * implement : 현재 보드를 복사하여 저장하는 함수
- * input : chess_board pointer
+ * implement : 현재 게임 정보를 복사하여 저장하는 함수
+ * input : 복사할 chess_board pointer
+ * output : 복사된 chess_board pointer
+*/
+chess_board* copyBoard(chess_board*);
+
+/**
+ * implement : 현재 게임 정보를 복구하는 함수
+ * input : 저장할 chess_board pointer, 복사될 chess_board pointer
  * output : x
 */
-void copyBoard(chess_board*);
+void recover_board(chess_board*,chess_board*);
 
 /**
  * implement : 본인의 왕이 체크 당했는지를 확인하는 함수
@@ -192,11 +208,13 @@ void copyBoard(chess_board*);
 bool isCheck(chess_board*);
 
 /**
- * implement : 
- * input :
- * output :
+ * implement : 입력으로 들어온 좌표에 있는 말이 움직일 수 있는 좌표를 구하는 함수
+ * input : chess_board_pointer, 말의 행(int), 말의 열(int), 좌표를 담을 coordi 리스트 주소, 좌표 리스트의 인덱스 주소
+ * output : x
 */
-void getMoveablePosition();
+void getMoveablePosition(chess_board*,int,int,coordi*,int*);
+
+
 
 /**
  * implement : 플레이어 순서를 바꿔줌
@@ -216,11 +234,11 @@ void changeTurn(chess_board*);
 void promotion();
 
 /**
- * implement : 
- * input :
- * output :
+ * implement : 캐슬링 할 수 있는 좌표를 구하는 함수
+ * input : chess_board pointer, 행(int), 열(int), 캐슬링가능한 좌표를 담을 리스트 포인터, 리스트 개수를 나타내는 idx
+ * output : x
 */
-void castling();
+void castling(chess_board*,int,int,coordi*,int*);
 
 /**
  * implement : 캐슬링 시에 왕이 해당 위치로 이동할 수 있는지 확인하는 함수
@@ -236,4 +254,4 @@ bool forCastling(chess_board*,int,int);
 */
 void enPassant(chess_board*, coordi*,int,int);
 
-#endif __CHESS_H__
+#endif
