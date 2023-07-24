@@ -42,7 +42,9 @@ typedef struct chess_board{
     int board[ROW][COL];
     int board_copy[ROW][COL];
     int white_death[PEICE_CNT];
+    int w_death_idx;
     int black_death[PEICE_CNT];
+    int b_death_idx;
     //unsinged char** board_history;
     bool black_check;
     bool white_check;
@@ -203,7 +205,7 @@ bool isCheck(chess_board*);
  * input : chess_board_pointer, 말의 행(int), 말의 열(int), 좌표를 담을 coordi 리스트 주소, 좌표 리스트의 인덱스 주소
  * output : x
 */
-void getMoveablePosition(chess_board*,int,int,coordi**,int*);
+void getMoveablePosition(chess_board*,int,int,coordi*,int*);
 
 
 
@@ -229,7 +231,7 @@ void promotion();
  * input : chess_board pointer, 행(int), 열(int), 캐슬링가능한 좌표를 담을 리스트 포인터, 리스트 개수를 나타내는 idx
  * output : x
 */
-void castling(chess_board*,int,int,coordi**,int*);
+void castling(chess_board*,int,int,coordi*,int*);
 
 /**
  * implement : 캐슬링 시에 왕이 해당 위치로 이동할 수 있는지 확인하는 함수
