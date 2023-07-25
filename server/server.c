@@ -218,7 +218,7 @@ int handle_client(pool_client *pc, pool_room *pr, MYSQL *mysql, char buf[], int 
         user_register(mysql, arguments);
     }
     else if(!strcmp(buf, "CRE")){
-        create_room(pr);
+        create_room(pr, client);
     }
     else if(!strcmp(buf, "FET")){
         fetch_information(pr, send_string);
@@ -273,11 +273,16 @@ int user_register(MYSQL *mysql, char **arguments){
 }
 
 
-int create_room(pool_room* pr){
+int create_room(pool_room* pr, int clientfd){
     pthread_t tid;
     // make room and add it to pool
-    add_room_to_pool();
-    if(pthread_create(&tid, NULL, room_main, NULL) < 0){
+
+    thread_arg ta;
+    ta.pr = pr;
+    ta.p1fd = clientfd;
+    ta.roomidx = add_room_to_pool();
+
+    if(pthread_create(&tid, NULL, room_main, (void*)&ta) < 0){
         fprintf(stderr, "pthread_create failed\n");
     }
     return TRUE;
@@ -286,12 +291,15 @@ int create_room(pool_room* pr){
 int fetch_information(pool_room* pr, char send_string[]){
     char *s = send_string;
     int total_len = 0;
+    
+    sem_wait(&pr->mutex);
     // fetch information from room_pool
     for(int i=0; i<MAX_ROOM; i++){
         if(pr->room[i].room_id != -1){
             sprintf(s, "%d %s %d %d %d %s", pr->room[i].room_id, pr->room[i].name, pr->room[i].max_user_count, pr->room[i].cur_user_count, pr->room[i].time, "placeholder");
         }
     }
+    sem_post(&pr->mutex);
     // pr->room[i].address
     return TRUE;
 }

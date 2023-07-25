@@ -86,6 +86,11 @@ typedef struct POOL_ROOM{
     sem_t mutex;
 } pool_room;
 
+typedef struct THREAD_ARG{
+    pool_room *pr;
+    int p1fd;
+    int roomidx;
+} thread_arg;
 /* Prototypes of Functions */
 
 
@@ -151,7 +156,7 @@ int user_register(MYSQL*, char**);
  * input : room_pool pointer
  * output : int 성공(TRUE)/실패(FALSE)
 */
-int create_room(pool_room*);
+int create_room(pool_room*, int);
 
 /**
  * implement : 서버에 만들어진 방을 room_pool에 추가 : room_option을 초기화 

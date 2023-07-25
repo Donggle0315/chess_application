@@ -1,6 +1,13 @@
 #include "room.h"
+#include "server.h"
 
 void* room_main(void* args){
+    thread_arg *ta = (thread_arg*)args;
+    pool_room *pr = ta->pr;
+    int main_p1fd = ta->p1fd;
+    int roomidx = ta->roomidx;
+
+
     pthread_detach(pthread_self());
     GAME_INFORMATION* gi=init_room();
     
@@ -35,6 +42,76 @@ void* room_main(void* args){
     int opt = 1;
     setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
 
+    // select
+    struct sockaddress_storage *clientaddr;
+    socklen_t clientlen = sizeof(struct sockaddr_storage);
+    int count = 0;
+
+    // send address to p1fd
+    // 그러면 p1에서 connect
+    char buf[MAX_LEN];
+    sprintf(buf, "ROM\n%s\n"); // address 보내야함
+    write(main_p1fd, buf, MAX_LEN);
+
+
+    fd_set read_set;
+    fd_set ready_set;
+    FD_ZERO(&read_set);
+    FD_SET(listenfd, &read_set);
+
+    int nready;
+    int maxfd = listenfd;
+    int p1fd, p2fd;
+    int player_count = 0;
+    while(1){
+        printf("\ninside room: %d\n", count++);
+
+        ready_set = read_set;
+
+        nready = select(maxfd+1, &ready_set, NULL, NULL, NULL);
+
+        // handle events
+        if(FD_ISSET(listenfd, &ready_set)){
+            int connfd = accept(listenfd, (SA*)clientaddr, &clientlen);
+            bool temp = add_player(gi, connfd, read_set);
+            if(temp == true){
+                player_count++;
+            }
+            
+            fprintf(stdout, "added player in fd: %d\n", connfd);
+            continue;
+        }
+
+        if(player_count == 2){
+            break;
+        }
+    }
+
+
+        
+        for(int i=0; (i<=pc.maxi) && (pc.nready>0); i++){
+            char buf[MAX_LEN];
+            char send_string[MAX_LEN];
+            int clientfd = pc.clientfd[i];
+            int len = read(clientfd, buf, MAX_LEN);
+            
+            // closed connection
+            if(len == 0){
+                FD_CLR(clientfd, &pc.read_set);
+                close(clientfd);
+                pc.clientfd[i] = -1;
+                pc.has_login[i] = -1;
+                pc.conn_count--;
+                printf("closed connection: %d \n", clientfd);
+                continue;
+            }
+
+            handle_client(&pc, &pr, mysql, buf, i, send_string);
+            
+            write(clientfd, send_string, MAX_LEN);
+        }
+    }
+
 
     start_game();//체스 게임 시작
 
@@ -57,12 +134,20 @@ void change_room_rule(){
 
 } //보류
 
-void start_game(){
+void start_game(fd_set read_set, int maxfd, int p1fd, int p2fd){
     chess_board* b=initBoard();
 
+    fd_set ready_set;
+    int nready;
     while(1){
+        
+        ready_set = read_set;
+        select(maxfd+1, &ready_set, NULL, NULL, NULL);
+
         if(isFinish(b)) break;
         
+        
+
         //printBoard(b);
 
         int sr,sc,fr,fc;
