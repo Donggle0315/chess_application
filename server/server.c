@@ -89,11 +89,12 @@ int main(){
     freeaddrinfo(listp);
     if(!p) return -1;
 
-    if(listen(listenfd, 20) < 0){
+    if(listen(listenfd, 100) < 0){
         close(listenfd);
         return -1;
     }
-
+    int opt = 1;
+    setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
 
 
     // accept
@@ -106,13 +107,15 @@ int main(){
 
     struct sockaddress_storage *clientaddr;
     socklen_t clientlen = sizeof(struct sockaddr_storage);
+    int count = 0;
     while(1){
+        printf("\ncount: %d\n", count++);
         pc.ready_set = pc.read_set;
         pc.nready = select(pc.maxfd+1, &pc.ready_set, NULL, NULL, NULL);
         // if listenfd
         if(pc.nready < 0){
             // error
-            printf("Error in select\n");
+            fprintf(stderr, "Error in select\n");
             return -1;
         } 
 
@@ -120,18 +123,30 @@ int main(){
         if(FD_ISSET(listenfd, &pc.ready_set)){
             int connfd = accept(listenfd, (SA*)clientaddr, &clientlen);
             add_client_to_pool(&pc, connfd);
-            fprintf(stdout, "added client in fd: %d", connfd);
+            fprintf(stdout, "added client in fd: %d\n", connfd);
             continue;
         }
 
-        char buf[MAX_LEN];
-        char send_string[MAX_LEN];
+        
         for(int i=0; (i<=pc.maxi) && (pc.nready>0); i++){
+            char buf[MAX_LEN];
+            char send_string[MAX_LEN];
             int clientfd = pc.clientfd[i];
             int len = read(clientfd, buf, MAX_LEN);
+            
+            // closed connection
+            if(len == 0){
+                FD_CLR(clientfd, &pc.read_set);
+                close(clientfd);
+                pc.clientfd[i] = -1;
+                pc.has_login[i] = -1;
+                pc.conn_count--;
+                printf("closed connection: %d \n", clientfd);
+                continue;
+            }
 
             handle_client(&pc, &pr, mysql, buf, i, send_string);
-
+            
             write(clientfd, send_string, MAX_LEN);
         }
     }
@@ -168,9 +183,12 @@ void add_client_to_pool(pool_client *pc, int fd){
 void parseline(char *buf, char **arguments){
     char *delim;
     int argc = 0;
+    int len = strlen(buf);
+    buf[len] = '\n';
 
     while(delim = strchr(buf, '\n')){
         arguments[argc++] = buf;
+        *delim = '\0';
         buf = delim+1; // search next part
     }
 
@@ -182,9 +200,18 @@ int handle_client(pool_client *pc, pool_room *pr, MYSQL *mysql, char buf[], int 
 
     parseline(buf, arguments);
     
+    // when sending data delimeter is \n
     if(!strcmp(buf, "LOG")){
         // arguments 0 = id, 1 = pw
-        user_login(mysql, pc, arguments, client);
+        printf("login attempt:\n");
+        bool success = user_login(mysql, pc, arguments, client);
+        if(success){
+            printf("success! login\n");
+            strcpy(send_string, "SUC\n");
+        }
+        else{
+            printf("failed login!\n");
+        }
     }
     else if(!strcmp(buf, "REG")){
         // arguments 0 = id, 1 = pw
@@ -207,9 +234,10 @@ int handle_client(pool_client *pc, pool_room *pr, MYSQL *mysql, char buf[], int 
 int user_login(MYSQL *mysql, pool_client *pc, char  **arguments, int client){
     MYSQL_RES *res;
     char buf[256];
-    sprintf(buf, "select %s from user", arguments[0]);
+    sprintf(buf, "select id from user_login_info where id='%s'", arguments[1]);
 
     if(mysql_query(mysql, buf) != 0){
+        fprintf(stderr, "%s\n", mysql_error(mysql));
         fprintf(stderr, "error has occured on mysql_query in login\n");
     }
 
@@ -218,18 +246,24 @@ int user_login(MYSQL *mysql, pool_client *pc, char  **arguments, int client){
         fprintf(stderr, "failed to retrieve in mysql_store_result\n");
         return FALSE;
     }
+    
     MYSQL_ROW row = mysql_fetch_row(res);
-    if(!strcmp(row[1], arguments[1])){
+    if (row == NULL){
+        fprintf(stderr, "no login info\n");
+        return FALSE;
+    }
+    if(!strcmp(row[1], arguments[2])){
         pc->has_login[client] = TRUE;
         strncpy(pc->client_info[client].user_id, row[0], 20);
         return TRUE;
     }
+    
 }
 
 int user_register(MYSQL *mysql, char **arguments){
     MYSQL_RES *res;
     char buf[256];
-    sprintf(buf, "insert into user_login_info(id, pw, username) values (%s, %s, %s)",arguments[0], arguments[1], arguments[2]);
+    sprintf(buf, "insert into user_login_info(id, pw, username) values (%s, %s, %s)",arguments[1], arguments[2], arguments[3]);
 
     if(mysql_query(mysql, buf) != 0){
         fprintf(stderr, "error has occured on mysql_query in register\n");

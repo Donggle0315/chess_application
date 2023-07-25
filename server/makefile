@@ -2,7 +2,7 @@
 flags = -lpthread -I/opt/homebrew/Cellar/mysql/8.0.33_3/include
 
 server: server.o room.o chess.o
-	gcc -o server server.o $(flags) `mysql_config --libs`
+	gcc -o server server.o room.o chess.o $(flags) `mysql_config --libs`
 
 server.o: server.h server.c
 	gcc -o server.o -c server.c $(flags) `mysql_config --cflags`

@@ -23,10 +23,13 @@ running = True
 background = pygame.Surface((1280, 720))
 background.fill('#FFFFFF')
 
+lobby_background = pygame.Surface((1280, 720))
+lobby_background.fill('#000000')
 
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client_socket.connect((HOST, PORT))
 
+window_state = "login"
 while running:
     delta = clock.tick(60)/1000
     for event in pygame.event.get():
@@ -38,13 +41,26 @@ while running:
                 print('sending login information')
                 id_text = id_text_box.get_text()
                 pw_text = pw_text_box.get_text()
-                client_socket.sendall(b'LOG {} {}'.format(id_text, pw_text))
+                sendtext = f'LOG\n{id_text}\n{pw_text}\n'
+                bytetext = str.encode(sendtext)
+                client_socket.sendall(bytetext)
+                
+                data = client_socket.recv(1024).split(b'\n')
+                head = data[0].decode()
+                print(head)
+                if head == 'SUC':
+                    window_state = 'lobby'
+                else:
+                    continue
+
         manager.process_events(event)
     
     manager.update(delta)
-
-    window.blit(background, (0, 0))
-    manager.draw_ui(window)
+    if window_state == "login":
+        window.blit(background, (0, 0))
+        manager.draw_ui(window)
+    elif window_state == 'lobby':
+        window.blit(lobby_background, (0, 0))
 
     clock.tick(60)
     pygame.display.flip()
