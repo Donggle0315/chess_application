@@ -38,7 +38,7 @@ while running:
                 print('sending login information')
                 id_text = id_text_box.get_text()
                 pw_text = pw_text_box.get_text()
-                client_socket.snedall(b'LOG {} {}'.format(id_text, pw_text))
+                client_socket.sendall(b'LOG {} {}'.format(id_text, pw_text))
         manager.process_events(event)
     
     manager.update(delta)

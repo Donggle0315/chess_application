@@ -168,7 +168,7 @@ void parseline(char *buf, char **arguments){
     char *delim;
     int argc = 0;
 
-    while(delim = strchr(buf, '\0')){
+    while(delim = strchr(buf, '\n')){
         arguments[argc++] = buf;
         buf = delim+1; // search next part
     }
@@ -271,61 +271,4 @@ int enter_room(){
 
 int exit_client(){
 
-}
-
-
-
-
-void init_room(){
-    if(pthread_detach(pthread_self()) < 0){
-        fprintf(stderr, "pthread_detach failed\n");
-    }
-}
-
-void* room_main(void* arg){
-    // argument is room_option pointer
-    room_option *option = arg;
-    init_room();
-    
-    // open_listenfd related stuff
-
-    struct epoll_event event[MAX_EVENTS];
-    int epollfd;
-    epollfd = epoll_create(1);
-    epoll_ctl(); // add listening descriptor
-
-    int event_count;
-    while(1){
-        event_count = epoll_wait();
-        // if listenfd
-        if(event_count < 0){
-            // error
-            printf("Error in epoll_wait\n");
-            return;
-        } 
-
-        // handle events
-        for(int i=0; i<event_count; i++){
-            if(event[i].data.fd == listenfd){
-                add_player();
-                continue;
-            }
-            else{
-                handle_player(event);
-            }
-        }
-
-    }
-    
-    exit_room();
-}
-
-void handle_player(struct epoll_event *event){
-    char data[MAX_LEN];
-    int clientfd = event->data.fd;
-    int len = read(clientfd, data, MAX_LEN); // change this later to prevent short-counts
-
-    if(!strcmp(data, "start game")){
-        
-    }
 }
