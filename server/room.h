@@ -34,7 +34,7 @@ GAME_INFORMATION* init_room();
  * input : GAME_INFORMATION*
  * output :int 성공(TRUE)/실패(FALSE)
 */
-int add_player(GAME_INFORMATION*);
+int add_player(GAME_INFORMATION*,int,fd_set);
 
 /**
  * implement : 플레이어의 역할을 변경
@@ -55,7 +55,7 @@ void change_room_rule(); //보류
  * input :
  * output :
 */
-void start_game();
+void start_game(fd_set,int,int,int);
 
 /**
  * implement : 게임이 종료된 후, 해당 방을 제거하기 위함 : room_pool에서 해당 방 제거
