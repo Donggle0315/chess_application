@@ -113,7 +113,7 @@ void* room_main(void* args){
     }
 
 
-    start_game();//체스 게임 시작
+    start_game(read_set,maxfd,p1fd,p2fd);//체스 게임 시작
 
     pthread_exit(0);
 }
