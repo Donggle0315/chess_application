@@ -1,5 +1,4 @@
 #include "room.h"
-#include "server.h"
 
 void* room_main(void* args){
     thread_arg *ta = (thread_arg*)args;

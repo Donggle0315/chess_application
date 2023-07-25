@@ -12,3 +12,6 @@ room.o: room.h room.c
 
 chess.o: chess.h chess.c
 	gcc -o chess.o -c chess.c $(flags) `mysql_config --cflags`
+
+clean:
+	rm -rf *~ server *.o
