@@ -5,10 +5,8 @@ chess.c - prototypes adn definitions for chess
 #ifndef __CHESS_H__
 #define __CHESS_H__
 
-//#include "server.h"
-#include <stdbool.h> //bool 자료형 사용
-#include <stdio.h>
-#include <stdlib.h>
+#include "server.h"
+#include <stdbool.h>
 
 /* macro functions */
 #define ROW         8

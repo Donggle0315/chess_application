@@ -6,6 +6,7 @@ server.c - prototypes adn definitions for Chess Aplication
 #define __SERVER_H__
 
 /* Include header files */
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -164,14 +165,14 @@ int add_room_to_pool();
  * input : void
  * output : int 성공(TRUE)/실패(FALSE)
 */
-int fetch_information(pool_room* char[]);
+int fetch_information(pool_room*, char[]);
 
 /**
  * implement : 방에 들어감
  * input :
  * output :
 */
-void enter_room(); //보류
+int enter_room(pool_client*, int);
 
 /**
  * implement : 클라이언트가 서버 연결을 끊는다 : client_pool에서 해당 클라이언트 정보를 삭제함, Pool 업데이트

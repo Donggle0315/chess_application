@@ -1,7 +1,7 @@
 #include "room.h"
 
 void* room_main(void* args){
-    pthread_detach(ptrhead_self());
+    pthread_detach(pthread_self());
     GAME_INFORMATION* gi=init_room();
     
 
@@ -32,7 +32,7 @@ void start_game(){
     while(1){
         if(isFinish(b)) break;
         
-        printBoard(b);
+        //printBoard(b);
 
         int sr,sc,fr,fc;
         //턴 확인 후 말을 선택함

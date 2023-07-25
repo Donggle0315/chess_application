@@ -1,5 +1,6 @@
 // include of user h
 #include "server.h"
+#include "room.h"
 
 /* INITIALIZATION AND TERMINATION */
 MYSQL *init_mysql(){
@@ -74,7 +75,7 @@ int main(){
     hints.ai_flags |=  AI_ADDRCONFIG; // returns valid addresses
     hints.ai_flags |= AI_NUMERICSERV; // only accept number ip address
 
-    getaddrinfo(NULL, itoa(PORT), &hints, &listp);
+    getaddrinfo(NULL, PORT, &hints, &listp);
 
     for(p=listp; p != NULL; p->ai_next){
         if((listenfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) < 0)
@@ -104,7 +105,7 @@ int main(){
     init_room_pool(&pr);
 
     struct sockaddress_storage *clientaddr;
-    int clientlen = sizeof(struct sockaddr_storage);
+    socklen_t clientlen = sizeof(struct sockaddr_storage);
     while(1){
         pc.ready_set = pc.read_set;
         pc.nready = select(pc.maxfd+1, &pc.ready_set, NULL, NULL, NULL);
@@ -112,12 +113,12 @@ int main(){
         if(pc.nready < 0){
             // error
             printf("Error in select\n");
-            return;
+            return -1;
         } 
 
         // handle events
         if(FD_ISSET(listenfd, &pc.ready_set)){
-            int connfd = accept(listenfd, (SA*)clientaddr, clientlen);
+            int connfd = accept(listenfd, (SA*)clientaddr, &clientlen);
             add_client_to_pool(&pc, connfd);
             fprintf(stdout, "added client in fd: %d", connfd);
             continue;
@@ -129,7 +130,7 @@ int main(){
             int clientfd = pc.clientfd[i];
             int len = read(clientfd, buf, MAX_LEN);
 
-            handle_client(&pc, &pr, &mysql, buf, i, send_string);
+            handle_client(&pc, &pr, mysql, buf, i, send_string);
 
             write(clientfd, send_string, MAX_LEN);
         }
@@ -196,10 +197,7 @@ int handle_client(pool_client *pc, pool_room *pr, MYSQL *mysql, char buf[], int 
         fetch_information(pr, send_string);
     }
     else if(!strcmp(buf, "ENT")){
-        enter_room();
-    }
-    else if(!strcmp(buf, "EXT")){
-        exit_client(); // 굳이 여기 있을 필요가?
+        
     }
 
     return TRUE;
@@ -257,18 +255,19 @@ int fetch_information(pool_room* pr, char send_string[]){
     // fetch information from room_pool
     for(int i=0; i<MAX_ROOM; i++){
         if(pr->room[i].room_id != -1){
-            sprintf(s, "%d %s %d %d %d %s", pr->room[i].room_id, pr->room[i].name, pr->room[i].max_user_count, pr->room[i].cur_user_count, pr->room[i].time, pr->room[i].address);
+            sprintf(s, "%d %s %d %d %d %s", pr->room[i].room_id, pr->room[i].name, pr->room[i].max_user_count, pr->room[i].cur_user_count, pr->room[i].time, "placeholder");
         }
     }
+    // pr->room[i].address
     return TRUE;
 }
 
-int enter_room(){
+int enter_room(pool_client *pc, int clientfd){
     // fetch selected room from room pool
     // cur_user_count < max_user_count -> connect to room
 
 }
 
-int exit_client(){
-
+int add_room_to_pool(){
+    return 0;
 }
