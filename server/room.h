@@ -34,7 +34,7 @@ GAME_INFORMATION* init_room();
  * input : GAME_INFORMATION*
  * output :int 성공(TRUE)/실패(FALSE)
 */
-int add_player(GAME_INFORMATION*);
+int add_player(GAME_INFORMATION*,int,fd_set);
 
 /**
  * implement : 플레이어의 역할을 변경

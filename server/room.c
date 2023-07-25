@@ -87,32 +87,6 @@ void* room_main(void* args){
         }
     }
 
-
-        
-        for(int i=0; (i<=pc.maxi) && (pc.nready>0); i++){
-            char buf[MAX_LEN];
-            char send_string[MAX_LEN];
-            int clientfd = pc.clientfd[i];
-            int len = read(clientfd, buf, MAX_LEN);
-            
-            // closed connection
-            if(len == 0){
-                FD_CLR(clientfd, &pc.read_set);
-                close(clientfd);
-                pc.clientfd[i] = -1;
-                pc.has_login[i] = -1;
-                pc.conn_count--;
-                printf("closed connection: %d \n", clientfd);
-                continue;
-            }
-
-            handle_client(&pc, &pr, mysql, buf, i, send_string);
-            
-            write(clientfd, send_string, MAX_LEN);
-        }
-    }
-
-
     start_game(read_set,maxfd,p1fd,p2fd);//체스 게임 시작
 
     pthread_exit(0);
@@ -122,7 +96,7 @@ GAME_INFORMATION* init_room(){
 
 }
 
-int add_player(GAME_INFORMATION* gi){
+int add_player(GAME_INFORMATION* gi,int connfd,fd_set read_set){
 
 }
 
