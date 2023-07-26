@@ -32,6 +32,7 @@ server.c - prototypes adn definitions for Chess Aplication
 #include <arpa/inet.h>
 #include <mysql/mysql.h>
 #include <sys/select.h>
+#include "mysql_login_info.h"
 
 /* Define macro functions */
 #define TMP 1024
@@ -41,10 +42,6 @@ server.c - prototypes adn definitions for Chess Aplication
 #define MAX_EVENTS 100
 #define MAX_LEN 2048
 
-#define MYSQL_HOST "localhost"
-#define MYSQL_USER "root"
-#define MYSQL_PW "wasdup@1017"
-#define MYSQL_DB "chess_db"
 #define TRUE 1
 #define FALSE 0
 
