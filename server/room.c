@@ -31,8 +31,7 @@ void* room_main(void* args){
         close(listenfd);
     }
 
-    freeaddrinfo(listp);
-    if(!p) return -1;
+    
 
     if(listen(listenfd, 100) < 0){
         close(listenfd);
@@ -42,16 +41,41 @@ void* room_main(void* args){
     setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
 
     // select
-    struct sockaddress_storage *clientaddr;
-    socklen_t clientlen = sizeof(struct sockaddr_storage);
+    char address[128];
     int count = 0;
+    short port;
+
+    struct sockaddr_in *sin;
+    struct sockaddr_in6 *sin6;
+
+    switch (p->ai_family) {
+        case AF_INET:
+            sin = (struct sockaddr_in *) p;
+            inet_ntop(AF_INET, &sin->sin_addr, address, 128);
+            port = ntohs(sin->sin_port);      
+            break;
+        case AF_INET6:
+            // TODO
+            break;
+    }
 
     // send address to p1fd
     // 그러면 p1에서 connect
     char buf[MAX_LEN];
-    sprintf(buf, "ROM\n%s\n"); // address 보내야함
+    sprintf(buf, "ROM\n%s\n%d\n", address, port); // address 보내야함
     write(main_p1fd, buf, MAX_LEN);
 
+    sem_wait(&pr->mutex);
+    strncpy(pr->room[roomidx].address, address, 128);
+    pr->room[roomidx].port = port;
+    sem_post(&pr->mutex);
+
+
+    freeaddrinfo(listp);
+    if(!p) return -1;
+
+    struct sockaddress_storage *clientaddr;
+    socklen_t clientlen = sizeof(struct sockaddr_storage);
 
     fd_set read_set;
     fd_set ready_set;

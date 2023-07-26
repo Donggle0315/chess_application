@@ -75,7 +75,8 @@ typedef struct ROOM_OPTION{
     int max_user_count;
     int cur_user_count;
     int time;
-    struct sockaddr_storage address;
+    char address[128];
+    short port;
 } room_option;
 
 typedef struct POOL_ROOM{
