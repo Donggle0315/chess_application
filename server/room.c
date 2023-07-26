@@ -1,5 +1,4 @@
 #include "room.h"
-#include "server.h"
 
 void* room_main(void* args){
     thread_arg *ta = (thread_arg*)args;
@@ -113,11 +112,15 @@ void* room_main(void* args){
 
     start_game(read_set,maxfd,p1fd,p2fd);//체스 게임 시작
 
+    exit_room(gi,pr);
     pthread_exit(0);
 }
 
 GAME_INFORMATION* init_room(){
+    GAME_INFORMATION* gi=(GAME_INFORMATION*)malloc(sizeof(GAME_INFORMATION));
+    gi->turn=1;
 
+    return gi;
 }
 
 int add_player(GAME_INFORMATION* gi,int connfd,fd_set read_set){
@@ -142,8 +145,13 @@ void start_game(fd_set read_set, int maxfd, int p1fd, int p2fd){
         ready_set = read_set;
         select(maxfd+1, &ready_set, NULL, NULL, NULL);
 
-        if(isFinish(b)) break;
-        
+        if(isFinish(b)) {
+            char finish_buf[MAX_LEN];
+            char* argv_buf[ARGUMENT_NUM];
+            argv_buf[0]="FIN";
+            
+            break;
+        }
         
 
         //printBoard(b);
@@ -186,6 +194,31 @@ void start_game(fd_set read_set, int maxfd, int p1fd, int p2fd){
     finishGame(b);
 }
 
-void exit_room(pool_room* pr){
+void exit_room(GAME_INFORMATION* gi,pool_room* pr){
+    free(gi);
+}
 
+int getString(char* string,char** buf){
+    char* ptr=strtok(string,"\n");
+    int idx=0;
+    while(ptr!=NULL){
+        strcpy(buf[idx++],ptr);
+        ptr=strtok(NULL,"\n");
+    }
+
+    return idx;
+}
+
+void makeString(char** buf, char* string){
+    char string[MAX_LEN];
+    int idx=0;
+    while(buf[idx][0]!=NULL){
+        strcat(string,buf[idx]);
+        strcat(string,"\n");
+        idx++;
+    }
+}
+
+void convertIntToString(int num, char*string){
+    
 }

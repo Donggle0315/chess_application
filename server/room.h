@@ -9,10 +9,11 @@ room.c - prototypes adn definitions for room
 #include "chess.h"
 
 #define MAX_PLAYER_NUM  2
+#define ARGUMENT_NUM 5
 
 typedef struct GAME_INFORMATION{
     int player[MAX_PLAYER_NUM];
-    int order;//몇번째 플레이어가 플레이할 차례인지
+    int turn;//몇번째 플레이어가 플레이할 차례인지
 }GAME_INFORMATION;
 
 /**
@@ -62,6 +63,27 @@ void start_game(fd_set,int,int,int);
  * input : pool_room pointer
  * output : void
 */
-void exit_room(pool_room*);
+void exit_room(GAME_INFORMATION*, pool_room*);
+
+/**
+ * implement : 인자로 들어온 문자열을 '\n'을 기준으로 나눠 버퍼에 저장하는 함수
+ * input : 나눌 문자열(char*), 문자열을 저장할 버퍼(char*[])
+ * output : 버퍼에 저장된 문자열 개수(idx)
+*/
+int getString(char*,char**);
+
+/**
+ * implement : 인자로 들어온 문자열을 '\n'을 기준으로 구분하여 하나의 문자열을 만드는 함수
+ * input : 나눌 문자열 배열(char*[]), 문자열을 저장할 버퍼(char*)
+ * output : x
+*/
+void makeString(char**,char*);
+
+/**
+ * implement : 정수를 문자열로 바꾸는 함수
+ * input : 정수, 문자열
+ * output : x
+*/
+void convertIntToString(int,char*);
 
 #endif
