@@ -5,9 +5,6 @@ room.c - prototypes adn definitions for room
 #ifndef __ROOM_H__
 #define __ROOM_H__
 
-#include "server.h"
-#include "chess.h"
-
 #define MAX_PLAYER_NUM  2
 #define ARGUMENT_NUM 5
 
@@ -15,6 +12,13 @@ typedef struct GAME_INFORMATION{
     int player[MAX_PLAYER_NUM];
     int turn;//몇번째 플레이어가 플레이할 차례인지
 }GAME_INFORMATION;
+
+#include "server.h"
+#include "chess.h"
+
+
+
+
 
 /**
  * implement : 방을 관리하는 메인함수(스레드에서 실행) : 
