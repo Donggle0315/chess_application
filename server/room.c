@@ -18,11 +18,11 @@ void* room_main(void* args){
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_flags = AI_PASSIVE; // address suitable for server
     hints.ai_flags |=  AI_ADDRCONFIG; // returns valid addresses
-    hints.ai_flags |= AI_NUMERICSERV; // only accept number ip address
+    //hints.ai_flags |= AI_NUMERICSERV; // only accept number ip address
 
-    getaddrinfo(NULL, PORT, &hints, &listp);
+    getaddrinfo(NULL, NULL, &hints, &listp);
 
-    for(p=listp; p != NULL; p->ai_next){
+    for(p=listp; p != NULL; p=p->ai_next){
         if((listenfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) < 0)
             continue;
         if(bind(listenfd, p->ai_addr, p->ai_addrlen) == 0){
@@ -35,7 +35,7 @@ void* room_main(void* args){
 
     if(listen(listenfd, 100) < 0){
         close(listenfd);
-        return -1;
+        pthread_exit((void*)-1);
     }
     int opt = 1;
     setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
@@ -62,7 +62,7 @@ void* room_main(void* args){
     // send address to p1fd
     // 그러면 p1에서 connect
     char buf[MAX_LEN];
-    sprintf(buf, "ROM\n%s\n%d\n", address, port); // address 보내야함
+    sprintf(buf, "ROM\n%s:%d\n", address, port); // address 보내야함
     write(main_p1fd, buf, MAX_LEN);
 
     sem_wait(&pr->mutex);
@@ -72,7 +72,7 @@ void* room_main(void* args){
 
 
     freeaddrinfo(listp);
-    if(!p) return -1;
+    if(!p) pthread_exit((void*)-1);
 
     struct sockaddress_storage *clientaddr;
     socklen_t clientlen = sizeof(struct sockaddr_storage);

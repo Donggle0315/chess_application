@@ -134,6 +134,7 @@ int main(){
             int clientfd = pc.clientfd[i];
             int len = read(clientfd, buf, MAX_LEN);
             
+            memset(send_string, 0, MAX_LEN);
             // closed connection
             if(len == 0){
                 FD_CLR(clientfd, &pc.read_set);
@@ -296,7 +297,7 @@ int fetch_information(pool_room* pr, char send_string[]){
     // fetch information from room_pool
     for(int i=0; i<MAX_ROOM; i++){
         if(pr->room[i].room_id != -1){
-            sprintf(s, "%d %s %d %d %d %s", pr->room[i].room_id, pr->room[i].name, pr->room[i].max_user_count, pr->room[i].cur_user_count, pr->room[i].time, "placeholder");
+            sprintf(s, "%d %s %d %d %d %s", pr->room[i].room_id, pr->room[i].name, pr->room[i].max_user_count, pr->room[i].cur_user_count, pr->room[i].time, pr->room[i].address);
         }
     }
     sem_post(&pr->mutex);
