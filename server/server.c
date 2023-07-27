@@ -223,6 +223,7 @@ int handle_client(pool_client *pc, pool_room *pr, MYSQL *mysql, char buf[], int 
     }
     else if(!strcmp(buf, "FET")){
         fetch_information(pr, send_string);
+        printf("fet\n");
     }
     else if(!strcmp(buf, "ENT")){
         
@@ -301,7 +302,9 @@ int fetch_information(pool_room* pr, char send_string[]){
         }
     }
     sem_post(&pr->mutex);
-    // pr->room[i].address
+    
+    
+
     return TRUE;
 }
 
