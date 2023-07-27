@@ -168,7 +168,7 @@ void start_game(GAME_INFORMATION* gi, fd_set read_set, int maxfd, int p1fd, int 
         coordi moveable_pos[ROW*COL];
         int moveable_idx=0;
         getMoveablePosition(b,sr,sc,moveable_pos,&moveable_idx);
-        sendMoveableToClient(gi,moveable_pos,moveable_idx,p1fd,p2fd);
+        sendMoveableToClient(gi,moveable_pos,moveable_idx,p1fd,p2fd);//움직일 수 있는 좌표를 클라이언트에게 보냄
         if(!moveable_idx){//해당 말이 갈 곳이 없음
             printf("해당 말은 움직일 수 없음\n");
             continue;
@@ -176,12 +176,12 @@ void start_game(GAME_INFORMATION* gi, fd_set read_set, int maxfd, int p1fd, int 
         else{
             bool isMove=true;
             do{
-                if(!isMove) sendIsMoveToClient(gi,false,p1fd,p2fd);
+                if(!isMove) sendIsMoveToClient(gi,false,p1fd,p2fd);//해당 위치로 움직이지 못했음을 클라이언트에게 보냄
                 printf("where is the piece going\n input fr, fc : ");
                 scanf("%d %d",&fr,&fc);
                 isMove=false;
             }while(!canMove(b,sr,sc,fr,fc));
-            sendIsMoveToClient(gi,true,p1fd,p2fd);
+            sendIsMoveToClient(gi,true,p1fd,p2fd);//헤당 위치로 움직였음을 클라이언트에게 보냄
 
             int deathCode=movePiece(b,sr,sc,fr,fc,true);
             if(deathCode){//잡은 말이 있을 경우
@@ -191,7 +191,7 @@ void start_game(GAME_INFORMATION* gi, fd_set read_set, int maxfd, int p1fd, int 
         changeTurn(b,gi);
     }
 
-    sendFinishToClient(gi,b,p1fd,p2fd);
+    sendFinishToClient(gi,b,p1fd,p2fd);//게임이 끝나고 이긴 사람이 누구인지 클라이언트에게 보냄
     finishGame(b);
 }
 
