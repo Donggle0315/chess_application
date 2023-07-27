@@ -93,4 +93,25 @@ void convertIntToString(int,char*);
 */
 void sendInfoToClient(GAME_INFORMATION*,chess_board*,int,int);
 
+/**
+ * implement : SEL의 정보를 보내주는 함수(턴 수, 이동 가능한 좌표)
+ * input : 게임정보, 좌표 정보, p1fd, p2fd
+ * output : x
+*/
+void sendMoveableToClient(GAME_INFORMATION*,coordi*,int,int,int);
+
+/**
+ * implement : MOV의 정보를 보내주는 함수(턴 수, 이동 여부)
+ * input : 게임정보, 이동 성공 여부, p1fd, p2fd
+ * output : x
+*/
+void sendIsMoveToClient(GAME_INFORMATION*,bool,int,int);
+
+/**
+ * implement : FIN의 정보를 보내주는 함수(이긴 사람 여부)
+ * input : 보드 정보, p1fd, p2fd
+ * output : x
+*/
+void sendFinishToClient(GAME_INFORMATION*,chess_board*,int,int);
+
 #endif
