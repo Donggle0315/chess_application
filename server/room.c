@@ -110,7 +110,7 @@ void* room_main(void* args){
         }
     }
 
-    start_game(read_set,maxfd,p1fd,p2fd);//체스 게임 시작
+    start_game(gi,read_set,maxfd,p1fd,p2fd);//체스 게임 시작
 
     exit_room(gi,pr);
     pthread_exit(0);
@@ -135,7 +135,7 @@ void change_room_rule(){
 
 } //보류
 
-void start_game(fd_set read_set, int maxfd, int p1fd, int p2fd){
+void start_game(GAME_INFORMATION* gi, fd_set read_set, int maxfd, int p1fd, int p2fd){
     chess_board* b=initBoard();
 
     fd_set ready_set;
@@ -145,15 +145,23 @@ void start_game(fd_set read_set, int maxfd, int p1fd, int p2fd){
         ready_set = read_set;
         select(maxfd+1, &ready_set, NULL, NULL, NULL);
 
-        if(isFinish(b)) {
+        if(isFinish(b)) {//게임이 종료되면 결과를 전송
             char finish_buf[MAX_LEN];
             char* argv_buf[ARGUMENT_NUM];
             argv_buf[0]="FIN";
-            
+            if(b->player_turn==BLACK){//white승리
+                argv_buf[1]="1";
+            }
+            else{//black승리
+                argv_buf[1]="2";
+            }
+            makeString(argv_buf,finish_buf);
+            write(p1fd,finish_buf,MAX_LEN);
+            write(p2fd,finish_buf,MAX_LEN);
             break;
         }
         
-
+        sendInfoToClient(gi,b,p1fd,p2fd);//게임 정보를 클라이언트에게 보냄
         //printBoard(b);
 
         int sr,sc,fr,fc;
@@ -189,7 +197,7 @@ void start_game(fd_set read_set, int maxfd, int p1fd, int p2fd){
                 continue;
             }
         }
-        changeTurn(b);
+        changeTurn(b,gi);
     }
     finishGame(b);
 }
@@ -220,5 +228,33 @@ void makeString(char** buf, char* string){
 }
 
 void convertIntToString(int num, char*string){
+    char tmp[MAX_LEN];
+    tmp[MAX_LEN-1]='\0';
+    int idx=MAX_LEN-2;
     
+    while(num!=0){
+        tmp[idx--]=(num%10)+'0';
+        num/=10;
+    }
+    strcpy(string,tmp+idx+1);
+}
+
+void sendInfoToClient(GAME_INFORMATION* gi, chess_board* b, int p1fd, int p2fd){
+    char buf[MAX_LEN];
+    char tmp[MAX_LEN];
+    strcat(buf,"TUR\n");
+    convertIntToString(gi->turn,tmp);
+    strcat(buf,tmp);
+    strcat(buf,"\n");
+    for(int i=0;i<ROW;i++){
+        for(int j=0;j<COL;j++){
+            char piece[3];
+            convertIntToString(b->board[i][j],piece);
+            strcat(buf,piece);
+        }
+    }
+    strcat(buf,"\n");
+
+    write(p1fd,buf,MAX_LEN);
+    write(p2fd,buf,MAX_LEN);
 }

@@ -56,7 +56,7 @@ void change_room_rule(); //보류
  * input :
  * output :
 */
-void start_game(fd_set,int,int,int);
+void start_game(GAME_INFORMATION*,fd_set,int,int,int);
 
 /**
  * implement : 게임이 종료된 후, 해당 방을 제거하기 위함 : room_pool에서 해당 방 제거
@@ -85,5 +85,12 @@ void makeString(char**,char*);
  * output : x
 */
 void convertIntToString(int,char*);
+
+/**
+ * implement : TUR의 정보를 보내주는 함수(턴 수, 보드 정보)
+ * input : 게임정보, 보드 정보, p1fd, p2fd
+ * output : x
+*/
+void sendInfoToClient(GAME_INFORMATION*,chess_board*,int,int);
 
 #endif

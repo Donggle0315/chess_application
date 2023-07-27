@@ -215,11 +215,11 @@ void getMoveablePosition(chess_board*,int,int,coordi*,int*);
 
 
 /**
- * implement : 플레이어 순서를 바꿔줌
- * input : chess_board pointer
+ * implement : 플레이어 순서를 바꿔줌, 턴 수 1씩 증가
+ * input : chess_board pointer, game_infomation pointer
  * output : x
 */
-void changeTurn(chess_board*);
+void changeTurn(chess_board*,GAME_INFORMATION*);
 
 
 /* special rules */

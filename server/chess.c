@@ -1,4 +1,5 @@
 #include "chess.h"
+#include "room.h"
 
 chess_board* initBoard(){
     chess_board* b=(chess_board*)malloc(sizeof(chess_board));
@@ -445,8 +446,9 @@ void getMoveablePosition(chess_board* b, int row, int col,coordi* can_pos,int* i
     }
 }
 
-void changeTurn(chess_board* b){
+void changeTurn(chess_board* b,GAME_INFORMATION* gi){
     b->player_turn=(b->player_turn==WHITE ? BLACK : WHITE);
+    (gi->turn)++;
 }
 
 /* special rules */

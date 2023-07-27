@@ -1,0 +1,11 @@
+서버와 클라이언트가 통신을 주고 받을 때 전송하는 형식
+
+# server TO client
+1. 게임 종료 시
+"FIN\n#\n"
+- #은 이긴 사람을 나타냄(1은 WHITE, 2는 BLACK)
+
+
+
+
+# client TO server
