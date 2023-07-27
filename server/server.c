@@ -132,7 +132,7 @@ int main(){
             char buf[MAX_LEN];
             char send_string[MAX_LEN];
             int clientfd = pc.clientfd[i];
-            int len = read(clientfd, buf, MAX_LEN);
+            int len = readall(clientfd, buf, MAX_LEN);
             
             memset(send_string, 0, MAX_LEN);
             // closed connection
@@ -148,7 +148,7 @@ int main(){
 
             handle_client(&pc, &pr, mysql, buf, i, send_string);
             
-            write(clientfd, send_string, MAX_LEN);
+            writeall(clientfd, send_string, MAX_LEN);
         }
     }
 
