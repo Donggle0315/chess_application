@@ -110,7 +110,7 @@ void* room_main(void* args){
         }
     }
 
-    start_game(read_set,maxfd,p1fd,p2fd);//체스 게임 시작
+    start_game(gi,read_set,maxfd,p1fd,p2fd);//체스 게임 시작
 
     exit_room(gi,pr);
     pthread_exit(0);
@@ -135,26 +135,24 @@ void change_room_rule(){
 
 } //보류
 
-void start_game(fd_set read_set, int maxfd, int p1fd, int p2fd){
+void start_game(GAME_INFORMATION* gi, fd_set read_set, int maxfd, int p1fd, int p2fd){
     chess_board* b=initBoard();
 
     fd_set ready_set;
     int nready;
     while(1){
         
-        ready_set = read_set;
-        select(maxfd+1, &ready_set, NULL, NULL, NULL);
 
-        if(isFinish(b)) {
-            char finish_buf[MAX_LEN];
-            char* argv_buf[ARGUMENT_NUM];
-            argv_buf[0]="FIN";
-            
+        if(isFinish(b)) {//게임이 종료되면 결과를 전송
             break;
         }
         
-
+        sendInfoToClient(gi,b,p1fd,p2fd);//게임 정보를 클라이언트에게 보냄
         //printBoard(b);
+
+        //read from client 
+        ready_set = read_set;
+        nready=select(maxfd+1, &ready_set, NULL, NULL, NULL);
 
         int sr,sc,fr,fc;
         //턴 확인 후 말을 선택함
@@ -170,27 +168,30 @@ void start_game(fd_set read_set, int maxfd, int p1fd, int p2fd){
         coordi moveable_pos[ROW*COL];
         int moveable_idx=0;
         getMoveablePosition(b,sr,sc,moveable_pos,&moveable_idx);
+        sendMoveableToClient(gi,moveable_pos,moveable_idx,p1fd,p2fd);
         if(!moveable_idx){//해당 말이 갈 곳이 없음
             printf("해당 말은 움직일 수 없음\n");
             continue;
         }
         else{
+            bool isMove=true;
             do{
+                if(!isMove) sendIsMoveToClient(gi,false,p1fd,p2fd);
                 printf("where is the piece going\n input fr, fc : ");
                 scanf("%d %d",&fr,&fc);
+                isMove=false;
             }while(!canMove(b,sr,sc,fr,fc));
-            
+            sendIsMoveToClient(gi,true,p1fd,p2fd);
+
             int deathCode=movePiece(b,sr,sc,fr,fc,true);
             if(deathCode){//잡은 말이 있을 경우
                 addDeathPiece(b,deathCode);
             }
-            else{
-                printf("움직일 수 없음\n");
-                continue;
-            }
         }
-        changeTurn(b);
+        changeTurn(b,gi);
     }
+
+    sendFinishToClient(gi,b,p1fd,p2fd);
     finishGame(b);
 }
 
@@ -220,5 +221,94 @@ void makeString(char** buf, char* string){
 }
 
 void convertIntToString(int num, char*string){
+    char tmp[MAX_LEN];
+    tmp[MAX_LEN-1]='\0';
+    int idx=MAX_LEN-2;
     
+    while(num!=0){
+        tmp[idx--]=(num%10)+'0';
+        num/=10;
+    }
+    strcpy(string,tmp+idx+1);
+}
+
+void sendInfoToClient(GAME_INFORMATION* gi, chess_board* b, int p1fd, int p2fd){
+    char buf[MAX_LEN];
+    char tmp[MAX_LEN];
+    strcat(buf,"TUR\n");
+    convertIntToString(gi->turn,tmp);
+    strcat(buf,tmp);
+    strcat(buf,"\n");
+
+    for(int i=0;i<ROW;i++){
+        for(int j=0;j<COL;j++){
+            char piece[3];
+            convertIntToString(b->board[i][j],piece);
+            strcat(buf,piece);
+        }
+    }
+    strcat(buf,"\n");
+
+    write(p1fd,buf,MAX_LEN);
+    write(p2fd,buf,MAX_LEN);
+}
+
+void sendMoveableToClient(GAME_INFORMATION* gi, coordi* moveable_pos,int idx,int p1fd,int p2fd){
+    char buf[MAX_LEN];
+    char tmp[MAX_LEN];
+    strcat(buf,"SEL\n");
+    convertIntToString(gi->turn,tmp);
+    strcat(buf,tmp);
+    strcat(buf,"\n");
+
+    for(int i=0;i<idx;i++){
+        char pos[6];
+        char tmp_pos[2];
+        convertIntToString(moveable_pos[i].row,pos);
+        convertIntToString(moveable_pos[i].col,tmp_pos);
+        strcat(pos,tmp_pos);
+        strcat(buf,pos);
+    }
+    strcat(buf,"\n");
+
+    write(p1fd,buf,MAX_LEN);
+    write(p2fd,buf,MAX_LEN);
+}
+
+void sendIsMoveToClient(GAME_INFORMATION*gi, bool move,int p1fd,int p2fd){
+    char buf[MAX_LEN];
+    char tmp[MAX_LEN];
+    strcat(buf,"MOV\n");
+    convertIntToString(gi->turn,tmp);
+    strcat(buf,tmp);
+    strcat(buf,"\n");
+
+    if(move){
+        strcat(buf,"1\n");
+    }
+    else{
+        stracat(buf,"0\n");
+    }
+
+    write(p1fd,buf,MAX_LEN);
+    write(p2fd,buf,MAX_LEN);
+}
+
+void sendFinishToClient(GAME_INFORMATION* gi,chess_board* b,int p1fd,int p2fd){
+    char buf[MAX_LEN];
+    char tmp[MAX_LEN];
+    strcat(buf,"MOV\n");
+    convertIntToString(gi->turn,tmp);
+    strcat(buf,tmp);
+    strcat(buf,"\n");
+
+    if(b->player_turn==BLACK){//white승리
+        strcat(buf,"1\n");
+    }
+    else{//black승리
+        strcat(buf,"2\n");
+    }
+
+    write(p1fd,buf,MAX_LEN);
+    write(p2fd,buf,MAX_LEN);    
 }

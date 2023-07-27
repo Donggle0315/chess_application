@@ -1,4 +1,5 @@
 #include "chess.h"
+#include "room.h"
 
 chess_board* initBoard(){
     chess_board* b=(chess_board*)malloc(sizeof(chess_board));
@@ -297,7 +298,7 @@ bool isFinish(chess_board* b){
             if(getPieceColor(b->board[i][j])==enemy_player){
                 coordi tmp_pos[64];
                 int tmp_idx=0;
-                changeTurn(b);
+                changeTurn(b,NULL);
                 getMoveablePosition(b,i,j,tmp_pos,&tmp_idx);
                 for(int k=0;k<tmp_idx;k++){
                     chess_board* tmp_board=copyBoard(b);
@@ -305,7 +306,7 @@ bool isFinish(chess_board* b){
                     if(!isCheck(b)) false_flag=true;
                     recover_board(b,tmp_board);
                 }
-                changeTurn(b);
+                changeTurn(b,NULL);
                 if(false_flag) return false;
             }
         }
@@ -398,11 +399,11 @@ bool isCheck(chess_board* b){
     //상대방 말이 본인의 왕의 위치로 이동할 수 있으면 true
     for(int i=0;i<ROW;i++){
         for(int j=0;j<COL;j++){
-            changeTurn(b);
+            changeTurn(b,NULL);
             if(canMove(b,i,j,k_row,k_col)){
                 flag=true;
             }
-            changeTurn(b);
+            changeTurn(b,NULL);
         }
     }
     return flag;
@@ -445,8 +446,10 @@ void getMoveablePosition(chess_board* b, int row, int col,coordi* can_pos,int* i
     }
 }
 
-void changeTurn(chess_board* b){
+void changeTurn(chess_board* b,GAME_INFORMATION* gi){
     b->player_turn=(b->player_turn==WHITE ? BLACK : WHITE);
+    if(gi==NULL) return;
+    (gi->turn)++;
 }
 
 /* special rules */
