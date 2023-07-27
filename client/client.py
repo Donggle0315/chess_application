@@ -31,8 +31,38 @@ lobby_manager = pygame_gui.UIManager((1280, 720))
 lobby_background = pygame.Surface((1280, 720))
 lobby_background.fill('#EEEEEE')
 
-lobby_refresh_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect(0, 0, 50, 50),
-                                                    text='refresh', manager=lobby_manager)
+lobby_refresh_bt_rect = pygame.Rect(0, 0, 50, 50)
+lobby_refresh_bt_rect.bottomright = (-100, -50)
+lobby_refresh_bt = pygame_gui.elements.UIButton(relative_rect=lobby_refresh_bt_rect,
+                                                    text='refresh', manager=lobby_manager,
+                                                    anchors={'right': 'right',
+                                                             'bottom': 'bottom'})
+
+create_room_bt_rect = pygame.Rect(0, 0, 50, 50)
+create_room_bt_rect.bottomright = (-200, -50)
+create_room_bt = pygame_gui.elements.UIButton(relative_rect=create_room_bt_rect,
+                                                    text='create room', manager=lobby_manager,
+                                                    anchors={'right': 'right',
+                                                             'bottom': 'bottom'})
+
+create_room_window_rect = pygame.Rect(300, 100, 700, 500)
+
+create_room_window_color = "#21282D"
+create_room_window = pygame_gui.elements.UIWindow(rect=create_room_window_rect, 
+                                                  window_display_title='create room',
+                                                  manager=lobby_manager)
+
+create_room_window.on_close_window_button_pressed = create_room_window.hide
+create_room_window.hide()
+
+# create room window
+room_name_text = pygame_gui.elements.UILabel(text='Room Name', relative_rect=pygame.Rect(50, 50, 150, 50),
+                                                manager=lobby_manager, container=create_room_window)
+room_name_text_box = pygame_gui.elements.UITextEntryLine(relative_rect=pygame.Rect(200, 50, 400, 50), manager=lobby_manager,
+                                                         container=create_room_window)
+
+
+
 
 
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -48,7 +78,15 @@ def fetch_room():
     sendtext = "FET"
     bytetext = sendtext.encode()
     client_socket.sendall(bytetext)
-    data = client_socket.recv(1024).split(b'\n')
+    data = client_socket.recv(1024).rstrip(b'\x00')
+
+    # no rooms
+    if data == b'':
+        return []
+
+    data = data.split(b'\n')
+    
+    
     for room in data:
         room = room.decode()
         arr.append(room.split('\x01'))
@@ -90,7 +128,7 @@ def login_screen():
 
 def lobby_screen():
     rooms = fetch_room()
-
+    print(rooms)
     while True:
         delta = clock.tick(120)/1000
         for event in pygame.event.get():
@@ -98,10 +136,13 @@ def lobby_screen():
                 quit()
             
             if event.type == pygame_gui.UI_BUTTON_PRESSED:
-                if event.ui_element == lobby_refresh_button:
+                if event.ui_element == lobby_refresh_bt:
                     print('refresh')
                     room = fetch_room()
-                    
+                if event.ui_element == create_room_bt:
+                    print('create room')
+                    create_room_window.show()
+
             lobby_manager.process_events(event)
         
         lobby_manager.update(delta)
