@@ -155,14 +155,14 @@ int user_register(MYSQL*, char**);
  * input : room_pool pointer
  * output : int 성공(TRUE)/실패(FALSE)
 */
-int create_room(pool_room*, int);
+int create_room(pool_room*, char*, int);
 
 /**
  * implement : 서버에 만들어진 방을 room_pool에 추가 : room_option을 초기화 
  * input : void 
  * output : int 성공(TRUE)/실패(FALSE)
 */
-int add_room_to_pool();
+int add_room_to_pool(char*);
 
 /**
  * implement : 전체 방 정보를 클라이언트로부터 받아서, room_pool에서 찾아서 클라이언트에게 전송

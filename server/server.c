@@ -219,7 +219,7 @@ int handle_client(pool_client *pc, pool_room *pr, MYSQL *mysql, char buf[], int 
         user_register(mysql, arguments);
     }
     else if(!strcmp(buf, "CRE")){
-        create_room(pr, client);
+        create_room(pr, arguments, client);
     }
     else if(!strcmp(buf, "FET")){
         fetch_information(pr, send_string);
@@ -275,14 +275,14 @@ int user_register(MYSQL *mysql, char **arguments){
 }
 
 
-int create_room(pool_room* pr, int clientfd){
+int create_room(pool_room* pr, char *arguments, int clientfd){
     pthread_t tid;
     // make room and add it to pool
 
     thread_arg ta;
     ta.pr = pr;
     ta.p1fd = clientfd;
-    ta.roomidx = add_room_to_pool();
+    ta.roomidx = add_room_to_pool(arguments);
 
     if(pthread_create(&tid, NULL, room_main, (void*)&ta) < 0){
         fprintf(stderr, "pthread_create failed\n");
@@ -314,6 +314,9 @@ int enter_room(pool_client *pc, int clientfd){
 
 }
 
-int add_room_to_pool(){
+int add_room_to_pool(char *arguments){
+    
+
+
     return 0;
 }

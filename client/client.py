@@ -56,23 +56,44 @@ create_room_window.on_close_window_button_pressed = create_room_window.hide
 create_room_window.hide()
 
 # create room window
-room_name_text = pygame_gui.elements.UILabel(text='Room Name', relative_rect=pygame.Rect(50, 50, 150, 50),
+room_name_label = pygame_gui.elements.UILabel(text='Room Name', relative_rect=pygame.Rect(50, 50, 150, 50),
                                                 manager=lobby_manager, container=create_room_window)
 room_name_text_box = pygame_gui.elements.UITextEntryLine(relative_rect=pygame.Rect(200, 50, 400, 50), manager=lobby_manager,
                                                          container=create_room_window)
 
+max_user_label = pygame_gui.elements.UILabel(text='Max User', relative_rect=pygame.Rect(50, 120, 150, 50),
+                                             manager=lobby_manager, container=create_room_window)
+max_user_menu = pygame_gui.elements.UIDropDownMenu(options_list=['2', '3', '4'],
+                                                    starting_option='2',
+                                                    relative_rect=pygame.Rect(200, 120, 100, 50),
+                                                    manager=lobby_manager, container=create_room_window)
 
+time_label = pygame_gui.elements.UILabel(text='Time (min)', relative_rect=pygame.Rect(50, 190, 150, 50),
+                                         manager=lobby_manager, container=create_room_window)
+time_menu = pygame_gui.elements.UIDropDownMenu(options_list=['10', '20', '30'],
+                                                    starting_option='10',
+                                                    relative_rect=pygame.Rect(200, 190, 100, 50),
+                                                    manager=lobby_manager, container=create_room_window)
+final_create_room_bt_rect = pygame.Rect(0, 0, 200, 50)
+final_create_room_bt_rect.bottomright = (-50, -50)
+final_create_room_bt = pygame_gui.elements.UIButton(relative_rect=final_create_room_bt_rect,
+                                                    text='Create Room!',
+                                                    manager=lobby_manager,
+                                                    container=create_room_window,
+                                                    anchors={'right': 'right',
+                                                             'bottom': 'bottom'})
 
-
-
+# socket interface
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client_socket.connect((HOST, PORT))
 
+# exit window
 def quit():
     pygame.quit()
     client_socket.close()
     exit()
 
+# fetch room information
 def fetch_room():
     arr = []
     sendtext = "FET"
@@ -142,6 +163,19 @@ def lobby_screen():
                 if event.ui_element == create_room_bt:
                     print('create room')
                     create_room_window.show()
+                if event.ui_element == final_create_room_bt:
+                    print('create room final')
+                    rname = room_name_text_box.text
+                    rmax_user = max_user_menu.selected_option
+                    rtime = time_menu.selected_option
+
+                    sendtext = f'CRE\n{rname}\n{rmax_user}\n{rtime}\n'
+                    bytetext = str.encode(sendtext)
+                    client_socket.sendall(bytetext)
+                    
+                    data = client_socket.recv(1024).split(b'\n')
+                    head = data[0].decode()
+
 
             lobby_manager.process_events(event)
         
