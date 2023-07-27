@@ -275,7 +275,7 @@ int user_register(MYSQL *mysql, char **arguments){
 }
 
 
-int create_room(pool_room* pr, char *arguments, int clientfd){
+int create_room(pool_room* pr, char **arguments, int clientfd){
     pthread_t tid;
     // make room and add it to pool
 
@@ -314,8 +314,8 @@ int enter_room(pool_client *pc, int clientfd){
 
 }
 
-int add_room_to_pool(char *arguments){
-    
+int add_room_to_pool(char **arguments){
+
 
 
     return 0;
