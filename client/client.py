@@ -83,9 +83,16 @@ final_create_room_bt = pygame_gui.elements.UIButton(relative_rect=final_create_r
                                                     anchors={'right': 'right',
                                                              'bottom': 'bottom'})
 
+# room
+
+
+
+
 # socket interface
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client_socket.connect((HOST, PORT))
+room_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
 
 # exit window
 def quit():
@@ -174,7 +181,12 @@ def lobby_screen():
                     client_socket.sendall(bytetext)
                     
                     data = client_socket.recv(1024).split(b'\n')
-                    head = data[0].decode()
+                    if data[0] == b'ADD':
+                        room_socket.connect((data[1], data[2]))
+                        return 'game'
+                    else:
+                        print('wrong data')
+                    
 
 
             lobby_manager.process_events(event)
@@ -189,6 +201,7 @@ def lobby_screen():
 
 def game_screen():
     pass
+
 
 
 window_state = "login"
