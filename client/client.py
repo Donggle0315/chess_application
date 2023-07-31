@@ -91,6 +91,29 @@ final_create_room_bt = pygame_gui.elements.UIButton(relative_rect=final_create_r
 
 # room
 room_manager = pygame_gui.UIManager((1280, 720))
+room_background = pygame.Surface((1280, 720))
+room_background.fill('#EEEEEE')
+
+
+
+
+# chess sprites
+chess_sprites = {}
+chess_sprites[21] = pygame.image.load('./img/rook_b.png')
+chess_sprites[22] = pygame.image.load('./img/knight_b.png')
+chess_sprites[23] = pygame.image.load('./img/bishop_b.png')
+chess_sprites[24] = pygame.image.load('./img/queen_b.png')
+chess_sprites[25] = pygame.image.load('./img/king_b.png')
+chess_sprites[26] = pygame.image.load('./img/pawn_b.png')
+
+chess_sprites[31] = pygame.image.load('./img/rook_w.png')
+chess_sprites[32] = pygame.image.load('./img/knight_w.png')
+chess_sprites[33] = pygame.image.load('./img/bishop_w.png')
+chess_sprites[34] = pygame.image.load('./img/queen_w.png')
+chess_sprites[35] = pygame.image.load('./img/king_w.png')
+chess_sprites[36] = pygame.image.load('./img/pawn_w.png')
+
+chess_sprites[99] = pygame.image.load('./img/checker.png')
 
 # socket interface
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -277,13 +300,99 @@ def lobby_screen():
         pygame.display.flip()
 
 
+class ChessSprite():
+    def __init__(self, color, x, y, width, height, chess_sprites, board_coord):
+        super(ChessSprite, self).__init__()
+        self.color = color
+        self.rect = pygame.Rect(x, y, width, height)
+        self.chess_sprites = chess_sprites
+        self.surface = pygame.Surface((width, height))
+        self.surface.fill(self.color)
+        self.board_coord = board_coord
+        self.moveable = False
+
+    def draw(self, window, num):
+        if num in chess_sprites:
+            self.surface.blit(self.chess_sprites[num], (0, 0, self.rect.width,self.rect.height))
+        if self.moveable:
+            self.surface.blit(self.chess_sprites[99], (0, 0, self.rect.width,self.rect.height))
+        window.blit(self.surface, self.rect)
+
+def display_board(window, board_gui, board):
+    for i in range(len(board)):
+        for j in range(len(board[i])):
+            board_gui[i][j].draw(window, board[i][j])
+
+size = 60
+start_x = 60
+start_y = 60
+
+for k in chess_sprites:
+        chess_sprites[k] = pygame.transform.scale(chess_sprites[k], (size, size))
+
+def disable_moveable(board_gui):
+    for i in board_gui:
+        for j in i:
+            j.moveable = False
 def game_screen():
+    # room_socket connect
+    #room_socket.connect()
+
+    # 8x8 board
+    
+    board = []
+    board_gui = []
+    for i in range(8):
+        row = []
+        row_gui = []
+        for j in range(8):
+            row.append(-1)
+            color = '#7A9D54' if (i+j)%2 else '#EEEEEE'
+            row_gui.append(ChessSprite(color, start_x+size*j, start_y+size*i, size, size, chess_sprites, (j,i)))
+        board.append(row)
+        board_gui.append(row_gui)
+
+    board[0][0] = 25
+
+    turn = 0
+    cur_select = [-1, -1]
     while True:
         delta = clock.tick(120)/1000
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 quit()
             
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                pos = pygame.mouse.get_pos()
+                if pos[0] > start_x and pos[0] < start_x+size*8 and pos[1] > start_y and pos[1] < start_y+size*8:
+                    # TODO: if turn
+                    for i in board_gui:
+                        for j in i:
+                            if j.rect.collidepoint(pos):
+                                print(j.board_coord)
+                                coord = j.board_coord
+                                if board_gui[coord[1]][coord[0]].moveable == False:
+                                    sendtext = f'SEL\n{turn}\n{coord[1]}{coord[0]}\n'
+                                    bytetext = str.encode(sendtext)
+                                    room_socket.sendall(bytetext)
+
+                                    data = room_socket.recv(1024).split(b'\n')
+                                    if data[0] == b'SEL' and int(data[1]) == turn:
+                                        moveable = data[2].split()
+                                        disable_moveable(board_gui)
+                                        for m in moveable:
+                                            r = int(m[0])
+                                            c = int(m[1])
+                                            cur_select = [c, r]
+                                            board_gui[r][c].moveable = True
+                                else:
+                                    sendtext = f'MOV\n{cur_select[1]}{cur_select[0]}{coord[1]}{coord[0]}\n'
+                                    bytetext = str.encode(sendtext)
+                                    room_socket.sendall(bytetext)
+
+                                    data = room_socket.recv(1024).split(b'\n')
+                                    
+
             if event.type == pygame_gui.UI_BUTTON_PRESSED:
                 pass
                     
@@ -292,13 +401,13 @@ def game_screen():
         room_manager.update(delta)
 
         window.blit(room_background, (0, 0))
-
+        display_board(window, board_gui, board)
         room_manager.draw_ui(window)
         pygame.display.flip()
 
 
 
-window_state = "login"
+window_state = "game"
 while True:
     if window_state == "login":
         window_state = login_screen()
