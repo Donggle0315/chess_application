@@ -45,9 +45,8 @@ create_room_bt = pygame_gui.elements.UIButton(relative_rect=create_room_bt_rect,
                                                     anchors={'right': 'right',
                                                              'bottom': 'bottom'})
 
-rooms_panel = pygame_gui.elements.UIPanel(pygame.Rect(30, 30, 900, 600),
+rooms_panel_display = pygame_gui.elements.UIPanel(pygame.Rect(30, 30, 900, 600),
                                           manager=lobby_manager)
-rooms_bt = []
 
 
 create_room_window_rect = pygame.Rect(300, 100, 700, 500)
@@ -93,13 +92,12 @@ final_create_room_bt = pygame_gui.elements.UIButton(relative_rect=final_create_r
 # room
 room_manager = pygame_gui.UIManager((1280, 720))
 
-final_create_room_bt.set_relative_position()
-
-
 # socket interface
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-client_socket.connect((HOST, PORT))
+#client_socket.connect((HOST, PORT))
 room_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+
 
 
 # exit window
@@ -135,27 +133,35 @@ def fetch_room():
         arr.append(d)
     return arr
 
-def make_rooms_bt(rooms):
-    for room in rooms_bt:
+def make_rooms_panel(rooms, rooms_panel: list):
+    for room in rooms_panel:
         room.kill()
     
-    rooms_bt = []
+    rooms_panel.clear()
 
     for room in rooms:
-        text = 'Name: {}\n User: {}/{}\n Time: {}\n'.format(room['room_name'], 
+        text = 'Name: {}\nUser: {}/{}\nTime: {}\n'.format(room['room_name'], 
                                                             room['cur_user_count'],
                                                             room['max_user_count'],
                                                             room['time'])
-        new_bt = pygame_gui.elements.UIButton(relative_rect=(0, 0, 300, 200),
-                                              text=text, manager=lobby_manager,
-                                              container=rooms_panel)
-        new_bt.disable()
+        
+        new_panel = pygame_gui.elements.UIPanel(relative_rect=pygame.Rect(0, 0, 300, 200),
+                                                manager=lobby_manager,
+                                                container=rooms_panel_display)
+        new_bt = pygame_gui.elements.UIButton(relative_rect=pygame.Rect(0, 150, 300, 50),
+                                              text='enter', manager=lobby_manager,
+                                              container=new_panel)
+        pygame_gui.elements.UITextBox(html_text=text,
+                                      relative_rect=pygame.Rect(0, 0, 300, 150),
+                                      manager=lobby_manager,
+                                      container=new_panel)
+        new_panel.disable()
 
-        rooms_bt.append(new_bt)
+        rooms_panel.append([new_panel, new_bt])
 
 
-def display_rooms_bt(page):
-    cur_idx = (page-1) * 4
+def display_rooms_panel(page, rooms_panel):
+    cur_idx = (page) * 4
 
     xpos = 50
     ypos = 10
@@ -166,11 +172,11 @@ def display_rooms_bt(page):
         if i % 2 == 1:
             ypos += 200
 
-    for i in rooms_bt:
+    for i, b in rooms_panel:
         i.disable()
 
-    for i in range(cur_idx, len(rooms_bt)):
-        cur = rooms_bt[i]
+    for i in range(cur_idx, len(rooms_panel)):
+        cur = rooms_panel[i][0]
         cur.set_relative_position((positions[i]))
         cur.enable()
 
@@ -211,9 +217,15 @@ def login_screen():
 
 def lobby_screen():
     page = 0
-    rooms = fetch_room()
-    make_rooms_bt(rooms)
-    display_rooms_bt()
+    #rooms = fetch_room()
+    rooms = [{'room_id': 0,
+              'room_name': 'what in the world',
+              'cur_user_count': 1,
+              'max_user_count': 2,
+              'time': 5}]
+    rooms_panel = []
+    make_rooms_panel(rooms, rooms_panel)
+    display_rooms_panel(page, rooms_panel)
 
     print(rooms)
     while True:
@@ -226,9 +238,9 @@ def lobby_screen():
                 if event.ui_element == lobby_refresh_bt:
                     print('refresh')
                     room = fetch_room()
-                    make_rooms_bt(rooms)
-                    display_rooms_bt()
-                    
+                    make_rooms_panel(rooms, rooms_panel)
+                    display_rooms_panel(page, rooms_panel)
+
                 if event.ui_element == create_room_bt:
                     print('create room')
                     create_room_window.show()
@@ -248,6 +260,10 @@ def lobby_screen():
                         return 'game'
                     else:
                         print('wrong data')
+                for p, b in rooms_panel_display:
+                    if event.ui_element == b:
+                        # TODO: enter
+                        pass
                     
 
 
@@ -282,7 +298,7 @@ def game_screen():
 
 
 
-window_state = "lobby"
+window_state = "login"
 while True:
     if window_state == "login":
         window_state = login_screen()

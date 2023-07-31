@@ -314,7 +314,7 @@ int fetch_information(pool_room* pr, char send_string[]){
 int enter_room(pool_client *pc, int clientfd){
     // fetch selected room from room pool
     // cur_user_count < max_user_count -> connect to room
-
+    
 }
 
 int add_room_to_pool(pool_room *pr, char **arguments){
