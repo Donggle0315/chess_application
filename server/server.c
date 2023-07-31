@@ -219,6 +219,7 @@ int handle_client(pool_client *pc, pool_room *pr, MYSQL *mysql, char buf[], int 
         user_register(mysql, arguments);
     }
     else if(!strcmp(buf, "CRE")){
+        // CRE name maxuser time
         create_room(pr, arguments, client);
     }
     else if(!strcmp(buf, "FET")){
@@ -282,7 +283,7 @@ int create_room(pool_room* pr, char **arguments, int clientfd){
     thread_arg ta;
     ta.pr = pr;
     ta.p1fd = clientfd;
-    ta.roomidx = add_room_to_pool(arguments);
+    ta.roomidx = add_room_to_pool(pr, arguments);
 
     if(pthread_create(&tid, NULL, room_main, (void*)&ta) < 0){
         fprintf(stderr, "pthread_create failed\n");
@@ -294,12 +295,14 @@ int fetch_information(pool_room* pr, char send_string[]){
     char *s = send_string;
     int total_len = 0;
     
+    char sbuf[MAX_LEN];
     sem_wait(&pr->mutex);
     // fetch information from room_pool
     for(int i=0; i<MAX_ROOM; i++){
         if(pr->room[i].room_id != -1){
-            sprintf(s, "%d %s %d %d %d %s", pr->room[i].room_id, pr->room[i].name, pr->room[i].max_user_count, pr->room[i].cur_user_count, pr->room[i].time, pr->room[i].address);
+            sprintf(sbuf, "%d\\%s\\%d\\%d\\%d\\%s:%d\n", pr->room[i].room_id, pr->room[i].name, pr->room[i].max_user_count, pr->room[i].cur_user_count, pr->room[i].time, pr->room[i].address, pr->room[i].port);
         }
+        strncat(send_string, sbuf, MAX_LEN);
     }
     sem_post(&pr->mutex);
     
@@ -314,8 +317,19 @@ int enter_room(pool_client *pc, int clientfd){
 
 }
 
-int add_room_to_pool(char **arguments){
+int add_room_to_pool(pool_room *pr, char **arguments){
+    sem_wait(&pr->mutex);
+    for(int i=0; i<MAX_ROOM; i++){
+        if(pr->room[i].room_id == -1){
+            pr->room[i].room_id = i;
+            strncpy(pr->room[i].name, arguments[1], 50);
+            pr->room[i].max_user_count = atoi(arguments[2]);
+            pr->room[i].cur_user_count = 0;
+            pr->room[i].time = atoi(arguments[3]);
+        }
+    }
 
+    sem_post(&pr->mutex);
 
 
     return 0;

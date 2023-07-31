@@ -45,6 +45,11 @@ create_room_bt = pygame_gui.elements.UIButton(relative_rect=create_room_bt_rect,
                                                     anchors={'right': 'right',
                                                              'bottom': 'bottom'})
 
+rooms_panel = pygame_gui.elements.UIPanel(pygame.Rect(30, 30, 900, 600),
+                                          manager=lobby_manager)
+rooms_bt = []
+
+
 create_room_window_rect = pygame.Rect(300, 100, 700, 500)
 
 create_room_window_color = "#21282D"
@@ -54,6 +59,8 @@ create_room_window = pygame_gui.elements.UIWindow(rect=create_room_window_rect,
 
 create_room_window.on_close_window_button_pressed = create_room_window.hide
 create_room_window.hide()
+
+
 
 # create room window
 room_name_label = pygame_gui.elements.UILabel(text='Room Name', relative_rect=pygame.Rect(50, 50, 150, 50),
@@ -84,8 +91,9 @@ final_create_room_bt = pygame_gui.elements.UIButton(relative_rect=final_create_r
                                                              'bottom': 'bottom'})
 
 # room
+room_manager = pygame_gui.UIManager((1280, 720))
 
-
+final_create_room_bt.set_relative_position()
 
 
 # socket interface
@@ -116,9 +124,56 @@ def fetch_room():
     
     
     for room in data:
-        room = room.decode()
-        arr.append(room.split('\x01'))
+        room = room.decode().split('\\')
+        d = {}
+        d['room_id'] = room[0]
+        d['room_name'] = room[1]
+        d['max_user_count'] = room[2]
+        d['cur_user_count'] = room[3]
+        d['time'] = room[4]
+        d['address'] = room[5]
+        arr.append(d)
     return arr
+
+def make_rooms_bt(rooms):
+    for room in rooms_bt:
+        room.kill()
+    
+    rooms_bt = []
+
+    for room in rooms:
+        text = 'Name: {}\n User: {}/{}\n Time: {}\n'.format(room['room_name'], 
+                                                            room['cur_user_count'],
+                                                            room['max_user_count'],
+                                                            room['time'])
+        new_bt = pygame_gui.elements.UIButton(relative_rect=(0, 0, 300, 200),
+                                              text=text, manager=lobby_manager,
+                                              container=rooms_panel)
+        new_bt.disable()
+
+        rooms_bt.append(new_bt)
+
+
+def display_rooms_bt(page):
+    cur_idx = (page-1) * 4
+
+    xpos = 50
+    ypos = 10
+    positions = []
+    for i in range(4):
+        positions.append((xpos, ypos))
+        xpos = (xpos + 400) % 800
+        if i % 2 == 1:
+            ypos += 200
+
+    for i in rooms_bt:
+        i.disable()
+
+    for i in range(cur_idx, len(rooms_bt)):
+        cur = rooms_bt[i]
+        cur.set_relative_position((positions[i]))
+        cur.enable()
+
 
 
 def login_screen():
@@ -155,7 +210,11 @@ def login_screen():
 
 
 def lobby_screen():
+    page = 0
     rooms = fetch_room()
+    make_rooms_bt(rooms)
+    display_rooms_bt()
+
     print(rooms)
     while True:
         delta = clock.tick(120)/1000
@@ -167,6 +226,9 @@ def lobby_screen():
                 if event.ui_element == lobby_refresh_bt:
                     print('refresh')
                     room = fetch_room()
+                    make_rooms_bt(rooms)
+                    display_rooms_bt()
+                    
                 if event.ui_element == create_room_bt:
                     print('create room')
                     create_room_window.show()
@@ -200,11 +262,27 @@ def lobby_screen():
 
 
 def game_screen():
-    pass
+    while True:
+        delta = clock.tick(120)/1000
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                quit()
+            
+            if event.type == pygame_gui.UI_BUTTON_PRESSED:
+                pass
+                    
+            room_manager.process_events(event)
+        
+        room_manager.update(delta)
+
+        window.blit(room_background, (0, 0))
+
+        room_manager.draw_ui(window)
+        pygame.display.flip()
 
 
 
-window_state = "login"
+window_state = "lobby"
 while True:
     if window_state == "login":
         window_state = login_screen()

@@ -162,7 +162,7 @@ int create_room(pool_room*, char**, int);
  * input : void 
  * output : int 성공(TRUE)/실패(FALSE)
 */
-int add_room_to_pool(char**);
+int add_room_to_pool(pool_room *, char**);
 
 /**
  * implement : 전체 방 정보를 클라이언트로부터 받아서, room_pool에서 찾아서 클라이언트에게 전송
