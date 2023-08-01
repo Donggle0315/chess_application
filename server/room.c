@@ -63,7 +63,7 @@ void* room_main(void* args){
     // 그러면 p1에서 connect
     char buf[MAX_LEN];
     memset(buf, 0, MAX_LEN);
-    sprintf(buf, "ENT\n%s:%d\n", address, port); // address 보내야함
+    sprintf(buf, "ENT\n%s:%d\n", "3.36.90.38", 56843); // address 보내야함
 	
 	printf("%s\n", buf);
 	
