@@ -144,7 +144,7 @@ def fetch_room():
     if data == b'':
         return []
 
-    data = data.split(b'\n')
+    data = data.split(b'\n')[:-1]
     
 
     for room in data:
