@@ -140,6 +140,9 @@ void start_game(GAME_INFORMATION* gi, fd_set read_set, int maxfd, int p1fd, int 
 
     fd_set ready_set;
     int nready;
+    int len;
+    char buf[MAX_LEN];
+    int flag=2;
     while(1){
         
 
@@ -151,55 +154,92 @@ void start_game(GAME_INFORMATION* gi, fd_set read_set, int maxfd, int p1fd, int 
         //printBoard(b);
 
         //read from client 
-        ready_set = read_set;
-        nready=select(maxfd+1, &ready_set, NULL, NULL, NULL);
-
         int sr,sc,fr,fc;
-        //턴 확인 후 말을 선택함
-        if(b->player_turn==WHITE) printf("player : white\n");
-        else printf("player : black\n");
-        printf("select piece\ninput sr, sc: ");
-        scanf("%d %d",&sr,&sc);
-        
-        //입력으로 -1 -1 이 들어오면 게임 리셋        
-        if(sr==-1 && sc==-1) resetGame(b);
-        
-        //선택한 말이 이동할 수 있는 곳을 출력
-        coordi moveable_pos[ROW*COL];
-        int moveable_idx=0;
-        getMoveablePosition(b,sr,sc,moveable_pos,&moveable_idx);
-        sendMoveableToClient(gi,moveable_pos,moveable_idx,p1fd,p2fd);//움직일 수 있는 좌표를 클라이언트에게 보냄
-        if(!moveable_idx){//해당 말이 갈 곳이 없음
-            printf("해당 말은 움직일 수 없음\n");
-            continue;
-        }
-        else{
-            bool isMove=true;
-            do{
+        while(1){
+            int now_player=getNowPlayer(gi,p1fd,p2fd);
+            //현재 턴인 플레이어로부터 SEL 읽어오기
+            while(flag!=0){//flag가 0이면 이미 좌표를 받은 상태임
                 ready_set=read_set;
                 nready=select(maxfd+1,&ready_set,NULL,NULL,NULL);
+                if(nready<0){
+                    fprintf(stderr,"Error in select\n");
+                    return -1;
+                }
+                if(FD_ISSET(now_player,&ready_set)){
+                    len=readall(now_player,buf,MAX_LEN);
+                    //SEL\n#\n이 올바른지 확인 -> 올바르면 break, 틀리면 continue;
+                    if(checkCMD(buf,gi->turn,SEL)){
+                        break;
+                    }
+                }
+            }
+            
+            getCoordinate(len,buf,&sr,&sc,&fr,&fc);
+            if(sr==-1&&sc==-1) {
+                resetGame(b);
+                break;
+            }
 
-                if(!isMove) sendIsMoveToClient(gi,false,p1fd,p2fd);//해당 위치로 움직이지 못했음을 클라이언트에게 보냄
-                printf("where is the piece going\n input fr, fc : ");
-                scanf("%d %d",&fr,&fc);
-                isMove=false;
-            }while(!canMove(b,sr,sc,fr,fc));
-            sendIsMoveToClient(gi,true,p1fd,p2fd);//헤당 위치로 움직였음을 클라이언트에게 보냄
+            //자신의 말이 선택되었다면, 해당 말이 갈 수 있는 좌표를 구해 클라이언트에게 전달
+            coordi moveable_pos[ROW*COL];
+            int moveable_idx=0;
+            getMoveablePosition(b,sr,sc,moveable_pos,&moveable_idx);
+            sendMoveableToClient(gi,moveable_pos,moveable_idx,p1fd,p2fd);
 
+            //클라이언트로부터 좌표를 불러와 움직일 수 있다면, 위치로 이동시켜줌
+            while(1){
+                ready_set=read_set;
+                nready=select(maxfd+1,&ready_set,NULL,NULL,NULL);
+                if(nready<0){
+                    fprintf(stderr,"Error in select\n");
+                    return -1;
+                }
+                if(FD_ISSET(now_player,&ready_set)){
+                    len=readall(now_player,buf,MAX_LEN);
+                    //MOV\n#\n이 올바른지 확인
+                    //SEL 이면 다시 위로 올라가야하고, 잘못된 좌표라면 continue, 올바르면 break
+                    if(checkCMD(buf,gi->turn,SEL)){
+                        flag=0;
+                        getCoordinate(len,buf,&sr,&sc,&fr,&fc);
+                        if(!canMove(b,sr,sc,fr,fc)){
+                            continue;
+                        }
+                        break;
+                    }
+                    if(checkCMD(buf,gi->turn,MOV)){
+                        flag=1;
+                    }
+                    else{
+                        continue;
+                    }
+                }                
+            }
+
+            if(flag==0){//SEL로 돌아가야 함
+                continue;
+            }
+
+            //해당 위치로 말을 움직일 수 있음
             int deathCode=movePiece(b,sr,sc,fr,fc,true);
-            if(deathCode){//잡은 말이 있을 경우
+            sendIsMoveToClient(gi,true,p1fd,p2fd);//해당 위치로 움직였음을 클라이언트에게 보냄
+            if(deathCode){
                 addDeathPiece(b,deathCode);
             }
         }
-        changeTurn(b,gi);
+        
+        changeTurn(b);
     }
-
-    sendFinishToClient(gi,b,p1fd,p2fd);//게임이 끝나고 이긴 사람이 누구인지 클라이언트에게 보냄
+    sendFinishToClient(gi,b,p1fd,p2fd);
     finishGame(b);
 }
 
 void exit_room(GAME_INFORMATION* gi,pool_room* pr){
     free(gi);
+}
+
+int getNowPlayer(GAME_INFORMATION* gi, int p1fd, int p2fd){
+    if((gi->turn)%2==0) return p2fd;
+    return p1fd;
 }
 
 int getString(char* string,char** buf){
@@ -314,4 +354,45 @@ void sendFinishToClient(GAME_INFORMATION* gi,chess_board* b,int p1fd,int p2fd){
 
     write(p1fd,buf,MAX_LEN);
     write(p2fd,buf,MAX_LEN);    
+}
+
+void getCoordinate(int len, char* buf, int* sr, int*sc,int* fr,int* fc){
+    for(int i=0;i<len;i++){
+        if('0'<=buf[i] && buf[i]<='9'){
+            *sr=(buf[i]-'0');
+            *sc=(buf[i+1]-'0');
+            if('0'<=buf[i+2] && buf[i+2]<='9'){
+                *fr=(buf[i+2]-'0');
+                *fc=(buf[i+3]-'0');
+            }
+            break;
+        }
+    }
+}
+
+bool checkCMD(char* buf,int turn, int cmd){
+    //cmd가 맞는지 확인
+    bool cmdFlag=false;
+    switch(cmd){
+        case SEL:
+            if(!strncmp(buf,"SEL",3)){
+                cmdFlag=true;
+            }
+            break;
+        case MOV:
+            if(!strncmp(buf,"MOV",3)){
+                cmdFlag=true;
+            }
+            break;
+    }
+
+    //턴수가 맞는지 확인
+    int tur=0;
+    for(int i=4;buf[i]!='\n';i++){
+        tur*=10;
+        tur+=(buf[i]-'0');
+    }
+    //결과 반환
+    if(tur==turn && cmdFlag) return true;
+    return false;
 }

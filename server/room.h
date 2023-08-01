@@ -7,6 +7,10 @@ room.c - prototypes adn definitions for room
 
 #define MAX_PLAYER_NUM  2
 #define ARGUMENT_NUM 5
+#define TUR 1
+#define SEL 2
+#define MOV 3
+#define ERR 4
 
 typedef struct GAME_INFORMATION{
     int player[MAX_PLAYER_NUM];
@@ -70,6 +74,13 @@ void start_game(GAME_INFORMATION*,fd_set,int,int,int);
 void exit_room(GAME_INFORMATION*, pool_room*);
 
 /**
+ * implement : 현재 플레이해야하는 클라이언트의 fd를 알려주는 함수
+ * input : GAME_INFORMATION pointer, p1fd, p2fd
+ * output : 현재 턴인 플레이어 fd
+*/
+int getNowPlayer(GAME_INFORMATION*, int, int);
+
+/**
  * implement : 인자로 들어온 문자열을 '\n'을 기준으로 나눠 버퍼에 저장하는 함수
  * input : 나눌 문자열(char*), 문자열을 저장할 버퍼(char*[])
  * output : 버퍼에 저장된 문자열 개수(idx)
@@ -118,4 +129,17 @@ void sendIsMoveToClient(GAME_INFORMATION*,bool,int,int);
 */
 void sendFinishToClient(GAME_INFORMATION*,chess_board*,int,int);
 
+/**
+ * implement : 버퍼에 저장된 좌표 정보를 얻어오는 함수
+ * input : len, buf, sr, sc, fr, fc
+ * output : x
+*/
+void getCoordinate(int,char*,int*,int*,int*,int*);
+
+/**
+ * implement : 버퍼에 저장된 함수가 원하는 명령어, 턴수에 맞는지 확인하는 함수
+ * input : buf, turn(int), cmd(int)
+ * output : 다 충족하면 true, 아니면 false
+*/
+bool checkCMD(char*,int,int);
 #endif
