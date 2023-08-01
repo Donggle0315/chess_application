@@ -176,7 +176,7 @@ int fetch_information(pool_room*, char[]);
  * input :
  * output :
 */
-int enter_room(pool_client*, int);
+int enter_room(pool_room*, int, char[]);
 
 /**
  * implement : 클라이언트가 서버 연결을 끊는다 : client_pool에서 해당 클라이언트 정보를 삭제함, Pool 업데이트

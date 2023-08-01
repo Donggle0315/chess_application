@@ -117,7 +117,7 @@ chess_sprites[99] = pygame.image.load('./img/checker.png')
 
 # socket interface
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-#client_socket.connect((HOST, PORT))
+client_socket.connect((HOST, PORT))
 room_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 
@@ -180,7 +180,7 @@ def make_rooms_panel(rooms, rooms_panel: list):
                                       container=new_panel)
         new_panel.disable()
 
-        rooms_panel.append([new_panel, new_bt])
+        rooms_panel.append([new_panel, new_bt, room])
 
 
 def display_rooms_panel(page, rooms_panel):
@@ -240,12 +240,8 @@ def login_screen():
 
 def lobby_screen():
     page = 0
-    #rooms = fetch_room()
-    rooms = [{'room_id': 0,
-              'room_name': 'what in the world',
-              'cur_user_count': 1,
-              'max_user_count': 2,
-              'time': 5}]
+    rooms = fetch_room()
+
     rooms_panel = []
     make_rooms_panel(rooms, rooms_panel)
     display_rooms_panel(page, rooms_panel)
@@ -283,10 +279,20 @@ def lobby_screen():
                         return 'game'
                     else:
                         print('wrong data')
-                for p, b in rooms_panel_display:
+                for p, b, room in rooms_panel:
                     if event.ui_element == b:
                         # TODO: enter
-                        pass
+
+                        sendtext = f'ENT\n{room["room_id"]}\n'
+                        bytetext = str.encode(sendtext)
+                        client_socket.sendall(bytetext)
+
+                        data = client_socket.recv(1024).split(b'\n')
+                        if data[0] == b'ENT':
+                            address, port = data[1].split(b':')
+                            room_socket.connect((address, int(port)))
+                            return 'game'
+                        
                     
 
 
@@ -407,7 +413,7 @@ def game_screen():
 
 
 
-window_state = "game"
+window_state = "login"
 while True:
     if window_state == "login":
         window_state = login_screen()

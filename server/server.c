@@ -227,7 +227,7 @@ int handle_client(pool_client *pc, pool_room *pr, MYSQL *mysql, char buf[], int 
         printf("fet\n");
     }
     else if(!strcmp(buf, "ENT")){
-        
+        enter_room(pr, atoi(arguments[1]), send_string);
     }
 
     return TRUE;
@@ -311,10 +311,12 @@ int fetch_information(pool_room* pr, char send_string[]){
     return TRUE;
 }
 
-int enter_room(pool_client *pc, int clientfd){
+int enter_room(pool_room *pr, int idx, char send_string[]){
     // fetch selected room from room pool
     // cur_user_count < max_user_count -> connect to room
-    
+    sem_wait(&pr->mutex);
+    sprintf(send_string, "ENT\n%s:%d", pr->room[idx].address, pr->room[idx].port);
+    sem_post(&pr->mutex);
 }
 
 int add_room_to_pool(pool_room *pr, char **arguments){
