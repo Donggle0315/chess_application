@@ -200,7 +200,7 @@ def display_rooms_panel(page, rooms_panel):
         if i % 2 == 1:
             ypos += 200
 
-    for i, b in rooms_panel:
+    for i, _, _ in rooms_panel:
         i.disable()
 
     for i in range(cur_idx, len(rooms_panel)):
