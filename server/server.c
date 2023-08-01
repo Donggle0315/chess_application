@@ -68,7 +68,8 @@ int main(){
     struct addrinfo *listp, *p;
     struct addrinfo hints;
     int listenfd;
-
+    int opt = 1;
+    
     memset(&hints, 0, sizeof(struct addrinfo));
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_flags = AI_PASSIVE; // address suitable for server
@@ -80,6 +81,8 @@ int main(){
     for(p=listp; p != NULL; p->ai_next){
         if((listenfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) < 0)
             continue;
+
+        setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
         if(bind(listenfd, p->ai_addr, p->ai_addrlen) == 0){
             break;
         }
@@ -93,8 +96,7 @@ int main(){
         close(listenfd);
         return -1;
     }
-    int opt = 1;
-    setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+    
 
 
     // accept
@@ -146,9 +148,11 @@ int main(){
                 printf("closed connection: %d \n", clientfd);
                 continue;
             }
-            handle_client(&pc, &pr, mysql, buf, i, send_string);
+            if(handle_client(&pc, &pr, mysql, buf, i, send_string)){
+                writeall(clientfd, send_string, MAX_LEN);
+            }
             
-            writeall(clientfd, send_string, MAX_LEN);
+            
         }
     }
 
@@ -185,7 +189,7 @@ void parseline(char *buf, char **arguments){
     char *delim;
     int argc = 0;
     int len = strlen(buf);
-    buf[len] = '\n';
+    buf[len-1] = '\n';
 
     while(delim = strchr(buf, '\n')){
         arguments[argc++] = buf;
@@ -221,6 +225,7 @@ int handle_client(pool_client *pc, pool_room *pr, MYSQL *mysql, char buf[], int 
     else if(!strcmp(buf, "CRE")){
         // CRE name maxuser time
         create_room(pr, arguments, client);
+        return FALSE;
     }
     else if(!strcmp(buf, "FET")){
         fetch_information(pr, send_string);
@@ -280,15 +285,16 @@ int create_room(pool_room* pr, char **arguments, int clientfd){
     pthread_t tid;
     // make room and add it to pool
 
-    thread_arg ta;
-    ta.pr = pr;
-    ta.p1fd = clientfd;
-    ta.roomidx = add_room_to_pool(pr, arguments);
+    thread_arg* ta = (thread_arg*)malloc(sizeof(thread_arg));
+    ta->pr = pr;
+    ta->p1fd = clientfd;
+    ta->roomidx = add_room_to_pool(pr, arguments);
     printf("addedroom\n");
 
-    if(pthread_create(&tid, NULL, room_main, (void*)&ta) < 0){
+    if(pthread_create(&tid, NULL, room_main, (void*)ta) < 0){
         fprintf(stderr, "pthread_create failed\n");
     }
+    printf("end create room\n");
     return TRUE;
 }
 
@@ -322,18 +328,18 @@ int enter_room(pool_room *pr, int idx, char send_string[]){
 
 int add_room_to_pool(pool_room *pr, char **arguments){
     sem_wait(&pr->mutex);
-    for(int i=0; i<MAX_ROOM; i++){
+    int i;
+    for(i=0; i<MAX_ROOM; i++){
         if(pr->room[i].room_id == -1){
             pr->room[i].room_id = i;
             strncpy(pr->room[i].name, arguments[1], 50);
             pr->room[i].max_user_count = atoi(arguments[2]);
             pr->room[i].cur_user_count = 0;
             pr->room[i].time = atoi(arguments[3]);
+            return i;
         }
     }
 
     sem_post(&pr->mutex);
-
-
     return 0;
 }

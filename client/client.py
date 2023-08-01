@@ -278,7 +278,9 @@ def lobby_screen():
                     client_socket.sendall(bytetext)
                     
                     data = client_socket.recv(MAXLEN).split(b'\n')
-                    if data[0] == b'ADD':
+                    print(data)
+                    
+                    if data[0] == b'ENT':
                         room_socket.connect((data[1], data[2]))
                         return 'game'
                     else:
