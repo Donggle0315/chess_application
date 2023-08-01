@@ -66,6 +66,10 @@ void* room_main(void* args){
     sprintf(buf, "ENT\n%s:%d\n", address, port); // address 보내야함
     writeall(main_p1fd, buf, MAX_LEN);
 
+    int temp;
+    sem_getvalue(&pr->mutex, &temp);
+    printf("%d\n", temp);
+    
     sem_wait(&pr->mutex);
     printf("asdasd\n");
     strncpy(pr->room[roomidx].address, address, 128);

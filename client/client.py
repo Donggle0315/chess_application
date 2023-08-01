@@ -2,8 +2,9 @@ import pygame
 import pygame_gui
 import socket
 
-HOST = '127.0.0.1'
-PORT = 12345
+ADDR = '3.36.90.38:58449'
+HOST, PORT = ADDR.split(':')
+PORT = int(PORT)
 MAXLEN = 2048
 
 pygame.init()
@@ -281,7 +282,10 @@ def lobby_screen():
                     print(data)
                     
                     if data[0] == b'ENT':
-                        room_socket.connect((data[1], data[2]))
+                        address, port = data[1].split(b':')
+                        address = address.decode()
+                        port = port.decode()
+                        room_socket.connect((address, int(port)))
                         return 'game'
                     else:
                         print('wrong data')
@@ -296,6 +300,8 @@ def lobby_screen():
                         data = client_socket.recv(MAXLEN).split(b'\n')
                         if data[0] == b'ENT':
                             address, port = data[1].split(b':')
+                            address = address.decode()
+                            port = port.decode()
                             room_socket.connect((address, int(port)))
                             return 'game'
                         

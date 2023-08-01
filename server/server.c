@@ -148,7 +148,7 @@ int main(){
                 printf("closed connection: %d \n", clientfd);
                 continue;
             }
-            if(handle_client(&pc, &pr, mysql, buf, i, send_string)){
+            if(handle_client(&pc, &pr, mysql, buf, clientfd, send_string)){
                 writeall(clientfd, send_string, MAX_LEN);
             }
             
@@ -308,8 +308,9 @@ int fetch_information(pool_room* pr, char send_string[]){
     for(int i=0; i<MAX_ROOM; i++){
         if(pr->room[i].room_id != -1){
             sprintf(sbuf, "%d\\%s\\%d\\%d\\%d\\%s:%d\n", pr->room[i].room_id, pr->room[i].name, pr->room[i].max_user_count, pr->room[i].cur_user_count, pr->room[i].time, pr->room[i].address, pr->room[i].port);
+            strncat(send_string, sbuf, MAX_LEN);
         }
-        strncat(send_string, sbuf, MAX_LEN);
+        
     }
     sem_post(&pr->mutex);
     
@@ -336,6 +337,7 @@ int add_room_to_pool(pool_room *pr, char **arguments){
             pr->room[i].max_user_count = atoi(arguments[2]);
             pr->room[i].cur_user_count = 0;
             pr->room[i].time = atoi(arguments[3]);
+            sem_post(&pr->mutex);
             return i;
         }
     }
