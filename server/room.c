@@ -225,6 +225,7 @@ void start_game(GAME_INFORMATION* gi, fd_set read_set, int maxfd, int p1fd, int 
             if(deathCode){
                 addDeathPiece(b,deathCode);
             }
+            break;
         }
         
         changeTurn(b);
