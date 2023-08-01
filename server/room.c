@@ -147,7 +147,7 @@ void start_game(GAME_INFORMATION* gi, fd_set read_set, int maxfd, int p1fd, int 
             break;
         }
         
-        sendInfoToClient(gi,b,p1fd,p2fd);//게임 정보를 클라이언트에게 보냄
+        sendInfoToClient(gi,b,p1fd,p2fd);//게임 정보를 클라이언트에게 보냄 "TUR"
         //printBoard(b);
 
         //read from client 
@@ -176,6 +176,9 @@ void start_game(GAME_INFORMATION* gi, fd_set read_set, int maxfd, int p1fd, int 
         else{
             bool isMove=true;
             do{
+                ready_set=read_set;
+                nready=select(maxfd+1,&ready_set,NULL,NULL,NULL);
+
                 if(!isMove) sendIsMoveToClient(gi,false,p1fd,p2fd);//해당 위치로 움직이지 못했음을 클라이언트에게 보냄
                 printf("where is the piece going\n input fr, fc : ");
                 scanf("%d %d",&fr,&fc);
