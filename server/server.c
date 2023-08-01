@@ -68,7 +68,8 @@ int main(){
     struct addrinfo *listp, *p;
     struct addrinfo hints;
     int listenfd;
-
+    int opt = 1;
+    
     memset(&hints, 0, sizeof(struct addrinfo));
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_flags = AI_PASSIVE; // address suitable for server
@@ -80,7 +81,8 @@ int main(){
     for(p=listp; p != NULL; p->ai_next){
         if((listenfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) < 0)
             continue;
-        printf("try bind\n");
+
+        setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
         if(bind(listenfd, p->ai_addr, p->ai_addrlen) == 0){
             break;
         }
@@ -94,8 +96,7 @@ int main(){
         close(listenfd);
         return -1;
     }
-    int opt = 1;
-    setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+    
 
 
     // accept
@@ -147,9 +148,11 @@ int main(){
                 printf("closed connection: %d \n", clientfd);
                 continue;
             }
-            handle_client(&pc, &pr, mysql, buf, i, send_string);
+            if(handle_client(&pc, &pr, mysql, buf, i, send_string)){
+                writeall(clientfd, send_string, MAX_LEN);
+            }
             
-            writeall(clientfd, send_string, MAX_LEN);
+            
         }
     }
 
@@ -222,6 +225,7 @@ int handle_client(pool_client *pc, pool_room *pr, MYSQL *mysql, char buf[], int 
     else if(!strcmp(buf, "CRE")){
         // CRE name maxuser time
         create_room(pr, arguments, client);
+        return FALSE;
     }
     else if(!strcmp(buf, "FET")){
         fetch_information(pr, send_string);

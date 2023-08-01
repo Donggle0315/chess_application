@@ -13,6 +13,7 @@ void* room_main(void* args){
     struct addrinfo *listp, *p;
     struct addrinfo hints;
     int listenfd;
+    int opt=1;
 
     memset(&hints, 0, sizeof(struct addrinfo));
     hints.ai_socktype = SOCK_STREAM;
@@ -21,12 +22,13 @@ void* room_main(void* args){
     hints.ai_flags |= AI_NUMERICSERV; // only accept number ip address
 
     char port_string[6];
-    for(short port=49152; port < 65535; port++){
+    unsigned short port;
+    for(port=49152; port < 65535; port++){
         snprintf(port_string, sizeof(port_string), "%d", port);
         if(getaddrinfo(NULL, port_string, &hints, &listp)==0){
             break;
         }
-        printf("can't connect to port: %d", port);
+        printf("can't connect to port: %d\n", port);
     }
     
     
@@ -35,52 +37,42 @@ void* room_main(void* args){
         if((listenfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) < 0)
             continue;
         printf("try bind2\n");
+        setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
         if(bind(listenfd, p->ai_addr, p->ai_addrlen) == 0){
             break;
         }
         close(listenfd);
     }
 
-    printf("hey\n");
-
+    char address[1024];
+    
+    int en;
+    if((en = getnameinfo(p->ai_addr, p->ai_addrlen, address, sizeof(address), NULL, 0, NI_NUMERICHOST)) != 0){
+        printf("error in getnameinfo\n");
+        printf("%s\n", gai_strerror(en));
+    }
+    
     if(listen(listenfd, 100) < 0){
         close(listenfd);
         pthread_exit((void*)-1);
     }
-    int opt = 1;
-    setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+    
 
-    // select
-    char address[128];
-    int count = 0;
-    short port;
-
-    struct sockaddr_in *sin;
-    struct sockaddr_in6 *sin6;
-
-    switch (p->ai_family) {
-        case AF_INET:
-            sin = (struct sockaddr_in *) p;
-            inet_ntop(AF_INET, &sin->sin_addr, address, 128);
-            port = ntohs(sin->sin_port);      
-            break;
-        case AF_INET6:
-            // TODO
-            break;
-    }
 
     // send address to p1fd
     // 그러면 p1에서 connect
     char buf[MAX_LEN];
+    memset(buf, 0, MAX_LEN);
     sprintf(buf, "ENT\n%s:%d\n", address, port); // address 보내야함
-    printf("%s\n", buf);
     writeall(main_p1fd, buf, MAX_LEN);
 
     sem_wait(&pr->mutex);
+    printf("asdasd\n");
     strncpy(pr->room[roomidx].address, address, 128);
     pr->room[roomidx].port = port;
     sem_post(&pr->mutex);
 
+    printf("yay\n");
 
     freeaddrinfo(listp);
     if(!p) pthread_exit((void*)-1);
@@ -97,6 +89,7 @@ void* room_main(void* args){
     int maxfd = listenfd;
     int p1fd, p2fd;
     int player_count = 0;
+    int count = 0;
     while(1){
         printf("\ninside room: %d\n", count++);
 
