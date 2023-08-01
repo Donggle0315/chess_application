@@ -173,7 +173,7 @@ void add_client_to_pool(pool_client *pc, int fd){
 
     pc->clientfd[i] = fd;
     pc->has_login[i] = FALSE;
-    FD_SET(fd, &pc->read_set);
+    FD_SET(fd, &(pc->read_set));
 
     if(fd > pc->maxfd)
         pc->maxfd = fd;
