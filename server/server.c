@@ -133,6 +133,9 @@ int main(){
             char buf[MAX_LEN];
             char send_string[MAX_LEN];
             int clientfd = pc.clientfd[i];
+            if(!FD_ISSET(clientfd, &pc.ready_set))
+                continue;
+                
             int error = readall(clientfd, buf, MAX_LEN);
 
 
