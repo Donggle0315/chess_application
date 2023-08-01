@@ -63,20 +63,19 @@ void* room_main(void* args){
     // 그러면 p1에서 connect
     char buf[MAX_LEN];
     memset(buf, 0, MAX_LEN);
-    sprintf(buf, "ENT\n%s:%d\n", address, port); // address 보내야함
+    sprintf(buf, "ENT\n%s:%d\n", "3.36.90.38", 56843); // address 보내야함
+	
+	printf("%s\n", buf);
+	
     writeall(main_p1fd, buf, MAX_LEN);
+	
 
-    int temp;
-    sem_getvalue(&pr->mutex, &temp);
-    printf("%d\n", temp);
     
     sem_wait(&pr->mutex);
-    printf("asdasd\n");
     strncpy(pr->room[roomidx].address, address, 128);
     pr->room[roomidx].port = port;
     sem_post(&pr->mutex);
 
-    printf("yay\n");
 
     freeaddrinfo(listp);
     if(!p) pthread_exit((void*)-1);
