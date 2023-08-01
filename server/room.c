@@ -72,8 +72,8 @@ void* room_main(void* args){
 
     
     sem_wait(&pr->mutex);
-    strncpy(pr->room[roomidx].address, address, 128);
-    pr->room[roomidx].port = port;
+    strncpy(pr->room[roomidx].address, "3.36.90.38", 128);
+    pr->room[roomidx].port = 56843;
     sem_post(&pr->mutex);
 
 

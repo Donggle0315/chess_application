@@ -77,7 +77,7 @@ typedef struct ROOM_OPTION{
     int cur_user_count;
     int time;
     char address[128];
-    short port;
+    unsigned short port;
 } room_option;
 
 typedef struct POOL_ROOM{
