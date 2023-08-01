@@ -5,7 +5,7 @@ void* room_main(void* args){
     pool_room *pr = ta->pr;
     int main_p1fd = ta->p1fd;
     int roomidx = ta->roomidx;
-
+    free(ta);
 
     pthread_detach(pthread_self());
     GAME_INFORMATION* gi=init_room();
@@ -18,20 +18,30 @@ void* room_main(void* args){
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_flags = AI_PASSIVE; // address suitable for server
     hints.ai_flags |=  AI_ADDRCONFIG; // returns valid addresses
-    //hints.ai_flags |= AI_NUMERICSERV; // only accept number ip address
+    hints.ai_flags |= AI_NUMERICSERV; // only accept number ip address
 
-    getaddrinfo(NULL, NULL, &hints, &listp);
-
+    char port_string[6];
+    for(short port=49152; port < 65535; port++){
+        snprintf(port_string, sizeof(port_string), "%d", port);
+        if(getaddrinfo(NULL, port_string, &hints, &listp)==0){
+            break;
+        }
+        printf("can't connect to port: %d", port);
+    }
+    
+    
     for(p=listp; p != NULL; p=p->ai_next){
+        printf("try socket\n");
         if((listenfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) < 0)
             continue;
+        printf("try bind2\n");
         if(bind(listenfd, p->ai_addr, p->ai_addrlen) == 0){
             break;
         }
         close(listenfd);
     }
 
-    
+    printf("hey\n");
 
     if(listen(listenfd, 100) < 0){
         close(listenfd);
@@ -62,8 +72,9 @@ void* room_main(void* args){
     // send address to p1fd
     // 그러면 p1에서 connect
     char buf[MAX_LEN];
-    sprintf(buf, "ROM\n%s:%d\n", address, port); // address 보내야함
-    write(main_p1fd, buf, MAX_LEN);
+    sprintf(buf, "ENT\n%s:%d\n", address, port); // address 보내야함
+    printf("%s\n", buf);
+    writeall(main_p1fd, buf, MAX_LEN);
 
     sem_wait(&pr->mutex);
     strncpy(pr->room[roomidx].address, address, 128);
