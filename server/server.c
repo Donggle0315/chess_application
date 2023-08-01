@@ -126,7 +126,6 @@ int main(){
             int connfd = accept(listenfd, (SA*)clientaddr, &clientlen);
             add_client_to_pool(&pc, connfd);
             fprintf(stdout, "added client in fd: %d\n", connfd);
-            continue;
         }
 
         
@@ -146,6 +145,7 @@ int main(){
                 pc.has_login[i] = -1;
                 pc.conn_count--;
                 printf("closed connection: %d \n", clientfd);
+                continue;
             }
             if(handle_client(&pc, &pr, mysql, buf, clientfd, send_string)){
                 writeall(clientfd, send_string, MAX_LEN);
