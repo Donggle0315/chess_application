@@ -191,7 +191,7 @@ void start_game(GAME_INFORMATION* gi, fd_set read_set, int maxfd, int p1fd, int 
                 addDeathPiece(b,deathCode);
             }
         }
-        changeTurn(b,gi);
+        changeTurn(b);
     }
 
     sendFinishToClient(gi,b,p1fd,p2fd);//게임이 끝나고 이긴 사람이 누구인지 클라이언트에게 보냄
@@ -214,9 +214,8 @@ int getString(char* string,char** buf){
 }
 
 void makeString(char** buf, char* string){
-    char string[MAX_LEN];
     int idx=0;
-    while(buf[idx][0]!=NULL){
+    while(buf[idx][0]!=0){
         strcat(string,buf[idx]);
         strcat(string,"\n");
         idx++;
@@ -290,7 +289,7 @@ void sendIsMoveToClient(GAME_INFORMATION*gi, bool move,int p1fd,int p2fd){
         strcat(buf,"1\n");
     }
     else{
-        stracat(buf,"0\n");
+        strcat(buf,"0\n");
     }
 
     write(p1fd,buf,MAX_LEN);
