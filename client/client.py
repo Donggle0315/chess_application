@@ -146,9 +146,10 @@ def fetch_room():
 
     data = data.split(b'\n')
     
-    
+
     for room in data:
         room = room.decode().split('\\')
+        print(room)
         d = {}
         d['room_id'] = room[0]
         d['room_name'] = room[1]
