@@ -135,7 +135,7 @@ int main(){
             int clientfd = pc.clientfd[i];
             if(!FD_ISSET(clientfd, &pc.ready_set))
                 continue;
-                
+
             int error = readall(clientfd, buf, MAX_LEN);
 
 
@@ -325,7 +325,7 @@ int enter_room(pool_room *pr, int idx, char send_string[]){
     // fetch selected room from room pool
     // cur_user_count < max_user_count -> connect to room
     sem_wait(&pr->mutex);
-    sprintf(send_string, "ENT\n%s:%d", pr->room[idx].address, pr->room[idx].port);
+    sprintf(send_string, "ENT\n%s:%d\n", pr->room[idx].address, pr->room[idx].port);
     sem_post(&pr->mutex);
 }
 
