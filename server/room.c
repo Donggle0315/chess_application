@@ -152,12 +152,9 @@ void start_game(GAME_INFORMATION* gi, fd_set read_set, int maxfd, int p1fd, int 
     char buf[MAX_LEN];
     int flag=2;
     while(1){
-        
-
         if(isFinish(b)) {//게임이 종료되면 결과를 전송
             break;
         }
-        
         sendInfoToClient(gi,b,p1fd,p2fd);//게임 정보를 클라이언트에게 보냄 "TUR"
         //printBoard(b);
 
