@@ -219,7 +219,7 @@ void getMoveablePosition(chess_board*,int,int,coordi*,int*);
  * input : chess_board pointer, game_infomation pointer
  * output : x
 */
-void changeTurn(chess_board*,GAME_INFORMATION*);
+void changeTurn(chess_board*);
 
 
 /* special rules */

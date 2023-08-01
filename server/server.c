@@ -132,11 +132,12 @@ int main(){
             char buf[MAX_LEN];
             char send_string[MAX_LEN];
             int clientfd = pc.clientfd[i];
-            int len = readall(clientfd, buf, MAX_LEN);
-            
+            int error = readall(clientfd, buf, MAX_LEN);
+
+
             memset(send_string, 0, MAX_LEN);
             // closed connection
-            if(len == 0){
+            if(error == 0){
                 FD_CLR(clientfd, &pc.read_set);
                 close(clientfd);
                 pc.clientfd[i] = -1;
@@ -145,7 +146,6 @@ int main(){
                 printf("closed connection: %d \n", clientfd);
                 continue;
             }
-
             handle_client(&pc, &pr, mysql, buf, i, send_string);
             
             writeall(clientfd, send_string, MAX_LEN);
@@ -284,6 +284,7 @@ int create_room(pool_room* pr, char **arguments, int clientfd){
     ta.pr = pr;
     ta.p1fd = clientfd;
     ta.roomidx = add_room_to_pool(pr, arguments);
+    printf("addedroom\n");
 
     if(pthread_create(&tid, NULL, room_main, (void*)&ta) < 0){
         fprintf(stderr, "pthread_create failed\n");

@@ -11,15 +11,18 @@ int readall(int fd, char *buf, int count){
     int bytes_read = 0;
 
     while (bytes_read < count) {
-        int cur_bytes_read = read(fd, count-bytes_read, buf);
+
+        int cur_bytes_read = read(fd, ptr, count-bytes_read);
         
         // an error happened
-        if(cur_bytes_read < 0){
+        if(cur_bytes_read <= 0){
             return cur_bytes_read;
         }
-
+        
         ptr += cur_bytes_read; // move pointer to match bytes read
         bytes_read += cur_bytes_read;
+
+        printf("%d\n", bytes_read);
     }
 
     return 1;
@@ -31,7 +34,7 @@ int writeall(int fd, char *buf, int count){
     int bytes_written = 0;
 
     while (bytes_written < count) {
-        int cur_bytes_written = write(fd, count-bytes_written, buf + bytes_written);
+        int cur_bytes_written = write(fd, buf + bytes_written, count-bytes_written);
         
         // an error happened
         if(cur_bytes_written < 0){

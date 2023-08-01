@@ -4,6 +4,7 @@ import socket
 
 HOST = '127.0.0.1'
 PORT = 12345
+MAXLEN = 2048
 
 pygame.init()
 window = pygame.display.set_mode((1280,720))
@@ -131,11 +132,12 @@ def quit():
 
 # fetch room information
 def fetch_room():
+    print('fet')
     arr = []
-    sendtext = "FET"
-    bytetext = sendtext.encode()
+    sendtext = "FET\n"
+    bytetext = sendtext.encode().ljust(MAXLEN, b'\0')
     client_socket.sendall(bytetext)
-    data = client_socket.recv(1024).rstrip(b'\x00')
+    data = client_socket.recv(MAXLEN).rstrip(b'\x00')
 
     # no rooms
     if data == b'':
@@ -154,6 +156,7 @@ def fetch_room():
         d['time'] = room[4]
         d['address'] = room[5]
         arr.append(d)
+
     return arr
 
 def make_rooms_panel(rooms, rooms_panel: list):
@@ -218,13 +221,14 @@ def login_screen():
                     id_text = id_text_box.get_text()
                     pw_text = pw_text_box.get_text()
                     sendtext = f'LOG\n{id_text}\n{pw_text}\n'
-                    bytetext = str.encode(sendtext)
+                    bytetext = str.encode(sendtext).ljust(MAXLEN, b'\0')
                     client_socket.sendall(bytetext)
                     
-                    data = client_socket.recv(1024).split(b'\n')
+                    data = client_socket.recv(MAXLEN).split(b'\n')
                     head = data[0].decode()
                     print(head)
                     if head == 'SUC':
+                        print(head)
                         return 'lobby'
                     else:
                         continue
@@ -270,10 +274,10 @@ def lobby_screen():
                     rtime = time_menu.selected_option
 
                     sendtext = f'CRE\n{rname}\n{rmax_user}\n{rtime}\n'
-                    bytetext = str.encode(sendtext)
+                    bytetext = str.encode(sendtext).ljust(MAXLEN, b'\0')
                     client_socket.sendall(bytetext)
                     
-                    data = client_socket.recv(1024).split(b'\n')
+                    data = client_socket.recv(MAXLEN).split(b'\n')
                     if data[0] == b'ADD':
                         room_socket.connect((data[1], data[2]))
                         return 'game'
@@ -284,10 +288,10 @@ def lobby_screen():
                         # TODO: enter
 
                         sendtext = f'ENT\n{room["room_id"]}\n'
-                        bytetext = str.encode(sendtext)
+                        bytetext = str.encode(sendtext).ljust(MAXLEN, b'\0')
                         client_socket.sendall(bytetext)
 
-                        data = client_socket.recv(1024).split(b'\n')
+                        data = client_socket.recv(MAXLEN).split(b'\n')
                         if data[0] == b'ENT':
                             address, port = data[1].split(b':')
                             room_socket.connect((address, int(port)))
@@ -382,7 +386,7 @@ def game_screen():
                                     bytetext = str.encode(sendtext)
                                     room_socket.sendall(bytetext)
 
-                                    data = room_socket.recv(1024).split(b'\n')
+                                    data = room_socket.recv(MAXLEN).split(b'\n')
                                     if data[0] == b'SEL' and int(data[1]) == turn:
                                         moveable = data[2].split()
                                         disable_moveable(board_gui)
@@ -396,7 +400,7 @@ def game_screen():
                                     bytetext = str.encode(sendtext)
                                     room_socket.sendall(bytetext)
 
-                                    data = room_socket.recv(1024).split(b'\n')
+                                    data = room_socket.recv(MAXLEN).split(b'\n')
                                     
 
             if event.type == pygame_gui.UI_BUTTON_PRESSED:

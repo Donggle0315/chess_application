@@ -254,9 +254,8 @@ int getString(char* string,char** buf){
 }
 
 void makeString(char** buf, char* string){
-    char string[MAX_LEN];
     int idx=0;
-    while(buf[idx][0]!=NULL){
+    while(buf[idx][0]!=0){
         strcat(string,buf[idx]);
         strcat(string,"\n");
         idx++;
@@ -330,7 +329,7 @@ void sendIsMoveToClient(GAME_INFORMATION*gi, bool move,int p1fd,int p2fd){
         strcat(buf,"1\n");
     }
     else{
-        stracat(buf,"0\n");
+        strcat(buf,"0\n");
     }
 
     write(p1fd,buf,MAX_LEN);
