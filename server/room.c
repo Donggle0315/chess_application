@@ -151,15 +151,13 @@ void start_game(GAME_INFORMATION* gi, fd_set read_set, int maxfd, int p1fd, int 
     char buf[MAX_LEN];
     int flag=2;
     while(1){
-        if(isFinish(b)) {//게임이 종료되면 결과를 전송
+        if(isFinish(b)) {//게임이 종료되면 결과를 전송하고 무한 루프 탈출
             break;
         }
         sendInfoToClient(gi,b,p1fd,p2fd);//게임 정보를 클라이언트에게 보냄 "TUR"
-        //printBoard(b);
-
         //read from client 
         int sr,sc,fr,fc;
-        while(1){
+        while(1){//올바른 SEL 문장을 읽어옴
             int now_player=getNowPlayer(gi,p1fd,p2fd);
             //현재 턴인 플레이어로부터 SEL 읽어오기
             while(flag!=0){//flag가 0이면 이미 좌표를 받은 상태임
@@ -169,7 +167,7 @@ void start_game(GAME_INFORMATION* gi, fd_set read_set, int maxfd, int p1fd, int 
                     fprintf(stderr,"Error in select\n");
                     return -1;
                 }
-                if(FD_ISSET(now_player,&ready_set)){
+                if(FD_ISSET(now_player,&ready_set)){//현재 순서에 맞는 플레이어가 입력함
                     len=readall(now_player,buf,MAX_LEN);
                     //SEL\n#\n이 올바른지 확인 -> 올바르면 break, 틀리면 continue;
                     if(checkCMD(buf,gi->turn,SEL)){
@@ -178,8 +176,8 @@ void start_game(GAME_INFORMATION* gi, fd_set read_set, int maxfd, int p1fd, int 
                 }
             }
             
-            getCoordinate(len,buf,&sr,&sc,&fr,&fc);
-            if(sr==-1&&sc==-1) {
+            getCoordinate(len,buf,&sr,&sc,&fr,&fc);//버퍼에서 좌표를 추출
+            if(sr==-1&&sc==-1) {//게임 리셋
                 resetGame(b);
                 break;
             }
@@ -198,23 +196,26 @@ void start_game(GAME_INFORMATION* gi, fd_set read_set, int maxfd, int p1fd, int 
                     fprintf(stderr,"Error in select\n");
                     return -1;
                 }
-                if(FD_ISSET(now_player,&ready_set)){
+                if(FD_ISSET(now_player,&ready_set)){//현재 순서에 맞는 플레이어가 입력함
                     len=readall(now_player,buf,MAX_LEN);
                     //MOV\n#\n이 올바른지 확인
                     //SEL 이면 다시 위로 올라가야하고, 잘못된 좌표라면 continue, 올바르면 break
                     if(checkCMD(buf,gi->turn,SEL)){
                         flag=0;
-                        getCoordinate(len,buf,&sr,&sc,&fr,&fc);
-                        if(!canMove(b,sr,sc,fr,fc)){
-                            continue;
-                        }
+                        // getCoordinate(len,buf,&sr,&sc,&fr,&fc);
+                        // if(!canMove(b,sr,sc,fr,fc)){
+                        //     continue;
+                        // }
                         break;
                     }
                     if(checkCMD(buf,gi->turn,MOV)){
                         flag=1;
-                    }
-                    else{
-                        continue;
+                        getCoordinate(len,buf,&sr,&sc,&fr,&fc);
+                        if(!canMove(b,sr,sc,fr,fc)){//해당 좌표로 이동할 수 없으면, false를 보내고 다시 입력 받도록함
+                            sendIsMoveToClient(gi,false,p1fd,p2fd);
+                            continue;
+                        }
+                        break;//올바른 좌표 정보가 들어왔다면 무한루프 탈출
                     }
                 }                
             }
@@ -223,19 +224,25 @@ void start_game(GAME_INFORMATION* gi, fd_set read_set, int maxfd, int p1fd, int 
                 continue;
             }
 
-            //해당 위치로 말을 움직일 수 있음
+            //해당 위치로 말을 움직임
             int deathCode=movePiece(b,sr,sc,fr,fc,true);
             sendIsMoveToClient(gi,true,p1fd,p2fd);//해당 위치로 움직였음을 클라이언트에게 보냄
-            if(deathCode){
+            if(deathCode){//죽을 말이 있을 경우 추가
                 addDeathPiece(b,deathCode);
             }
             break;
         }
-        
+        //플레이어 턴 변경
         changeTurn(b);
+        increaseTurnCnt(gi);
     }
+    //게임 종료
     sendFinishToClient(gi,b,p1fd,p2fd);
     finishGame(b);
+}
+
+void increaseTurnCnt(GAME_INFORMATION* gi){
+    (gi->turn)++;
 }
 
 void exit_room(GAME_INFORMATION* gi,pool_room* pr){
@@ -267,88 +274,55 @@ void makeString(char** buf, char* string){
     }
 }
 
-void convertIntToString(int num, char*string){
-    char tmp[MAX_LEN];
-    tmp[MAX_LEN-1]='\0';
-    int idx=MAX_LEN-2;
-    
-    while(num!=0){
-        tmp[idx--]=(num%10)+'0';
-        num/=10;
-    }
-    strcpy(string,tmp+idx+1);
-}
-
 void sendInfoToClient(GAME_INFORMATION* gi, chess_board* b, int p1fd, int p2fd){
     char buf[MAX_LEN];
-    char tmp[MAX_LEN];
-    strcat(buf,"TUR\n");
-    convertIntToString(gi->turn,tmp);
-    strcat(buf,tmp);
-    strcat(buf,"\n");
-
+    fprintf(buf,"TUR\n%d\n",gi->turn);
+    //보드 위 정보를 저장
     for(int i=0;i<ROW;i++){
         for(int j=0;j<COL;j++){
             char piece[3];
-            convertIntToString(b->board[i][j],piece);
+            fprintf(piece,"%d",b->board[i][j]);
             strcat(buf,piece);
         }
     }
     strcat(buf,"\n");
 
-    write(p1fd,buf,MAX_LEN);
-    write(p2fd,buf,MAX_LEN);
+    writeall(p1fd,buf,MAX_LEN);
+    writeall(p2fd,buf,MAX_LEN);
 }
 
 void sendMoveableToClient(GAME_INFORMATION* gi, coordi* moveable_pos,int idx,int p1fd,int p2fd){
     char buf[MAX_LEN];
-    char tmp[MAX_LEN];
-    strcat(buf,"SEL\n");
-    convertIntToString(gi->turn,tmp);
-    strcat(buf,tmp);
-    strcat(buf,"\n");
-
+    fprintf(buf,"SEL\n%d\n",gi->turn);
+    //좌표 정보 저장
     for(int i=0;i<idx;i++){
         char pos[6];
-        char tmp_pos[2];
-        convertIntToString(moveable_pos[i].row,pos);
-        convertIntToString(moveable_pos[i].col,tmp_pos);
-        strcat(pos,tmp_pos);
+        fprintf(pos,"%d%d",moveable_pos[i].row,moveable_pos[i].col);
         strcat(buf,pos);
     }
     strcat(buf,"\n");
 
-    write(p1fd,buf,MAX_LEN);
-    write(p2fd,buf,MAX_LEN);
+    writeall(p1fd,buf,MAX_LEN);
+    writeall(p2fd,buf,MAX_LEN);
 }
 
 void sendIsMoveToClient(GAME_INFORMATION*gi, bool move,int p1fd,int p2fd){
     char buf[MAX_LEN];
-    char tmp[MAX_LEN];
-    strcat(buf,"MOV\n");
-    convertIntToString(gi->turn,tmp);
-    strcat(buf,tmp);
-    strcat(buf,"\n");
-
-    if(move){
+    fprintf(buf,"MOV\n%d\n",gi->turn);
+    if(move){//이동 성공
         strcat(buf,"1\n");
     }
-    else{
+    else{//이동 실패
         strcat(buf,"0\n");
     }
 
-    write(p1fd,buf,MAX_LEN);
-    write(p2fd,buf,MAX_LEN);
+    writeall(p1fd,buf,MAX_LEN);
+    writeall(p2fd,buf,MAX_LEN);
 }
 
 void sendFinishToClient(GAME_INFORMATION* gi,chess_board* b,int p1fd,int p2fd){
     char buf[MAX_LEN];
-    char tmp[MAX_LEN];
-    strcat(buf,"MOV\n");
-    convertIntToString(gi->turn,tmp);
-    strcat(buf,tmp);
-    strcat(buf,"\n");
-
+    fprintf(buf,"FIN\n%d\n",gi->turn);
     if(b->player_turn==BLACK){//white승리
         strcat(buf,"1\n");
     }
@@ -356,20 +330,30 @@ void sendFinishToClient(GAME_INFORMATION* gi,chess_board* b,int p1fd,int p2fd){
         strcat(buf,"2\n");
     }
 
-    write(p1fd,buf,MAX_LEN);
-    write(p2fd,buf,MAX_LEN);    
+    writeall(p1fd,buf,MAX_LEN);
+    writeall(p2fd,buf,MAX_LEN);
 }
 
 void getCoordinate(int len, char* buf, int* sr, int*sc,int* fr,int* fc){
-    for(int i=0;i<len;i++){
-        if('0'<=buf[i] && buf[i]<='9'){
-            *sr=(buf[i]-'0');
-            *sc=(buf[i+1]-'0');
-            if('0'<=buf[i+2] && buf[i+2]<='9'){
-                *fr=(buf[i+2]-'0');
-                *fc=(buf[i+3]-'0');
-            }
-            break;
+    int idx=0;
+    int newLineCnt=2;
+    // 좌표가 있는 곳(개행문자 2번 뒤)까지 접근
+    while(newLineCnt!=0){
+        if(buf[idx++]=='\n'){
+            newLineCnt--;
+        }
+    }
+    //좌표 정보를 저장
+    if('0'<=buf[idx] && buf[idx]<='9'){
+        *sr=(buf[idx]-'0');
+        *sc=(buf[idx+1]-'0');
+        if('0'<=buf[idx+2] && buf[idx+2]<='9'){
+            *fr=(buf[idx+2]-'0');
+            *fc=(buf[idx+3]-'0');
+        }
+        else{
+            *fr=-1;
+            *fc=-1;
         }
     }
 }

@@ -67,6 +67,13 @@ void change_room_rule(); //보류
 void start_game(GAME_INFORMATION*,fd_set,int,int,int);
 
 /**
+ * implement : GAME_INFORMATION에 저장된 턴수를 증가시키는 함수
+ * input : GAME_INFORMATION pointer
+ * output : void
+*/
+void increaseTurnCnt(GAME_INFORMATION*);
+
+/**
  * implement : 게임이 종료된 후, 해당 방을 제거하기 위함 : room_pool에서 해당 방 제거
  * input : pool_room pointer
  * output : void
@@ -95,13 +102,6 @@ int getString(char*,char**);
 void makeString(char**,char*);
 
 /**
- * implement : 정수를 문자열로 바꾸는 함수
- * input : 정수, 문자열
- * output : x
-*/
-void convertIntToString(int,char*);
-
-/**
  * implement : TUR의 정보를 보내주는 함수(턴 수, 보드 정보)
  * input : 게임정보, 보드 정보, p1fd, p2fd
  * output : x
@@ -116,8 +116,8 @@ void sendInfoToClient(GAME_INFORMATION*,chess_board*,int,int);
 void sendMoveableToClient(GAME_INFORMATION*,coordi*,int,int,int);
 
 /**
- * implement : MOV의 정보를 보내주는 함수(턴 수, 이동 여부)
- * input : 게임정보, 이동 성공 여부, p1fd, p2fd
+ * implement : MOV의 정보를 보내주는 함수(턴 수, 이동 여부) -> 이동 성공시 1, 실패시 0을 버퍼에 저장
+ * input : 게임정보, 이동 성공 여부(bool), p1fd, p2fd
  * output : x
 */
 void sendIsMoveToClient(GAME_INFORMATION*,bool,int,int);
@@ -130,7 +130,7 @@ void sendIsMoveToClient(GAME_INFORMATION*,bool,int,int);
 void sendFinishToClient(GAME_INFORMATION*,chess_board*,int,int);
 
 /**
- * implement : 버퍼에 저장된 좌표 정보를 얻어오는 함수
+ * implement : 버퍼에 저장된 좌표 정보를 얻어오는 함수 / sr,sc만 버퍼에 있다면 fr,fc는 -1로 초기화
  * input : len, buf, sr, sc, fr, fc
  * output : x
 */
