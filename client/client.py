@@ -73,7 +73,7 @@ class LoginScreen():
                     bytetext = str.encode(sendtext).ljust(MAXLEN, b'\0')
                     self.sock.sendall(bytetext)
                     
-                    data = self.sock.recv(MAXLEN).split(b'\n')
+                    data = recvall(self.sock, MAXLEN).split(b'\n')
                     head = data[0].decode()
                     if head == 'SUC':
                         self.running = False
@@ -185,7 +185,7 @@ class LobbyScreen():
             
             self.manager.update(delta)
             self.render()
-
+        return self.next_window
     def handle_events(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -210,15 +210,17 @@ class LobbyScreen():
                     bytetext = str.encode(sendtext).ljust(MAXLEN, b'\0')
                     self.sock.sendall(bytetext)
                     
-                    data = self.sock.recv(MAXLEN).split(b'\n')
-                    print(data)
-                    
+                    data = recvall(self.sock, MAXLEN).split(b'\n')
+                    print(data, len(data[0]))
+
                     if data[0] == b'ENT':
                         address, port = data[1].split(b':')
                         address = address.decode()
                         port = port.decode()
                         self.room_sock.connect((address, int(port)))
-                        return 'game'
+                        self.running = False
+                        self.next_window = 'game'
+                        return
                     else:
                         print('wrong data')
 
@@ -231,7 +233,7 @@ class LobbyScreen():
                         bytetext = str.encode(sendtext).ljust(MAXLEN, b'\0')
                         self.sock.sendall(bytetext)
 
-                        data = self.sock.recv(MAXLEN).split(b'\n')
+                        data = recvall(self.sock, MAXLEN).split(b'\n')
                         if data[0] == b'ENT':
                             address, port = data[1].split(b':')
                             address = address.decode()
@@ -306,7 +308,7 @@ class LobbyScreen():
         sendtext = "FET\n"
         bytetext = sendtext.encode().ljust(MAXLEN, b'\0')
         self.sock.sendall(bytetext)
-        data = self.sock.recv(MAXLEN).rstrip(b'\x00')
+        data = recvall(self.sock, MAXLEN).rstrip(b'\x00')
 
         # no rooms
         if data == b'':
@@ -393,7 +395,7 @@ class GameScreen():
             self.manager.update(delta)
 
             self.window.blit(self.background, (0, 0))
-            self.display_board(self.window, self.board_gui, self.board)
+            self.display_board()
             self.manager.draw_ui(self.window)
             pygame.display.flip()
 
@@ -416,10 +418,10 @@ class GameScreen():
                                     bytetext = str.encode(sendtext)
                                     self.sock.sendall(bytetext)
 
-                                    data = self.sock.recv(MAXLEN).split(b'\n')
+                                    data = recvall(self.sock, MAXLEN).split(b'\n')
                                     if data[0] == b'SEL' and int(data[1]) == self.turn:
                                         moveable = data[2].split()
-                                        disable_moveable(self.board_gui)
+                                        self.disable_moveable(self.board_gui)
                                         for m in moveable:
                                             r = int(m[0])
                                             c = int(m[1])
@@ -430,7 +432,7 @@ class GameScreen():
                                     bytetext = str.encode(sendtext)
                                     self.sock.sendall(bytetext)
 
-                                    data = self.sock.recv(MAXLEN).split(b'\n')
+                                    data = recvall(self.sock, MAXLEN).split(b'\n')
                                     
 
             if event.type == pygame_gui.UI_BUTTON_PRESSED:
@@ -483,7 +485,14 @@ def start_game():
             window_state = game_screen.run()
 
 
-
+def recvall(sock, size):
+    data = b""
+    while len(data) < size:
+        chunk = sock.recv(size - len(data))
+        if not chunk:
+            break
+        data += chunk
+    return data
 
 
 
