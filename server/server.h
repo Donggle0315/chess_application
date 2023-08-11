@@ -71,25 +71,18 @@ typedef struct POOL_CLIENT{
 
 typedef struct ROOM_OPTION{
     int room_id;
-    int roomfd;
     char name[50];
     int max_user_count;
     int cur_user_count;
     int time;
-    char address[128];
-    unsigned short port;
+    
 } room_option;
 
 typedef struct POOL_ROOM{
     room_option room[MAX_ROOM];
-    sem_t mutex;
 } pool_room;
 
-typedef struct THREAD_ARG{
-    pool_room *pr;
-    int p1fd;
-    int roomidx;
-} thread_arg;
+
 /* Prototypes of Functions */
 
 
@@ -185,5 +178,6 @@ int enter_room(pool_room*, int, char[]);
 */
 int exit_client(pool_client*, int);
 
+int open_clientfd();
 
 #endif
