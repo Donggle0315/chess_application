@@ -50,6 +50,10 @@ server.c - prototypes adn definitions for Chess Aplication
 #define PLAYER2 12
 #define SPECTATOR 13
 
+#define ROW         8
+#define COL         8
+#define PEICE_CNT   16
+
 /* Simplifies calls to bind(), connect(), and accept() */
 typedef struct sockaddr SA;
 
@@ -69,20 +73,56 @@ typedef struct POOL_CLIENT{
     int has_login[FD_SETSIZE];//로그인 되어있으면 FALSE, 없으면 TRUE
 } pool_client;
 
+typedef struct GAME_INFORMATION{
+    int player[MAX_PLAYER_NUM];
+    int turn;//몇번째 플레이어가 플레이할 차례인지
+}GAME_INFORMATION;
+
+typedef struct chess_board{
+    //기본 정보들
+    int board[ROW][COL];
+    int board_copy[ROW][COL];
+    int white_death[PEICE_CNT];
+    int w_death_idx;
+    int black_death[PEICE_CNT];
+    int b_death_idx;
+    //unsinged char** board_history;
+    bool black_check;
+    bool white_check;
+    int player_turn;
+    //special rule 변수
+    int promotion_r;
+    int promotion_c;
+    bool castling_check[6];
+    bool castling_flag;
+    int last_move[5];
+    bool en_passant_flag;
+
+    //게임 시간
+    int black_time;
+    int white_time;
+}chess_board;
+
 typedef struct ROOM_OPTION{
     int room_id;
     char name[50];
     int max_user_count;
     int cur_user_count;
     int time;
-    
+    int player_fd[2];
+    GAME_INFORMATION *gi;
+    chess_board *b;
 } room_option;
 
 typedef struct POOL_ROOM{
     room_option room[MAX_ROOM];
 } pool_room;
 
-
+typedef struct SEND_INFO{
+    char send_string[MAX_LEN];
+    int send_fds[4];
+    int size;
+} send_info;
 /* Prototypes of Functions */
 
 
@@ -126,7 +166,7 @@ void parseline(char*, char**);
  * input : client_pool pointer,room_pool pointer, mysql pointer
  * output : int 성공(TRUE)/실패(FALSE)
 */
-int handle_client(pool_client*, pool_room*, MYSQL*, char[], int, char[]);
+int handle_client(pool_client*, pool_room*, MYSQL*, char[], int, send_info*);
 
 /**
  * implement : 클라이언트의 로그인
@@ -148,7 +188,7 @@ int user_register(MYSQL*, char**);
  * input : room_pool pointer
  * output : int 성공(TRUE)/실패(FALSE)
 */
-int create_room(pool_room*, char**, int);
+int create_room(pool_room*, char**, int, send_info*);
 
 /**
  * implement : 서버에 만들어진 방을 room_pool에 추가 : room_option을 초기화 
@@ -162,14 +202,14 @@ int add_room_to_pool(pool_room *, char**);
  * input : void
  * output : int 성공(TRUE)/실패(FALSE)
 */
-int fetch_information(pool_room*, char[]);
+int fetch_information(pool_room*, send_info*);
 
 /**
  * implement : 방에 들어감
  * input :
  * output :
 */
-int enter_room(pool_room*, int, char[]);
+int enter_room(pool_room*, int, int);
 
 /**
  * implement : 클라이언트가 서버 연결을 끊는다 : client_pool에서 해당 클라이언트 정보를 삭제함, Pool 업데이트

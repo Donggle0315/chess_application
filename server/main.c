@@ -41,15 +41,16 @@ int main(){
         
         for(int i=0; (i<=pc.maxi) && (pc.nready>0); i++){
             char buf[MAX_LEN];
-            char send_string[MAX_LEN];
             int clientfd = pc.clientfd[i];
             if(!FD_ISSET(clientfd, &pc.ready_set))
                 continue;
 
             int error = readall(clientfd, buf, MAX_LEN);
 
+            send_info si;
+            memset(si.send_string, 0, MAX_LEN);
+            si.size = 0;
 
-            memset(send_string, 0, MAX_LEN);
             // closed connection
             if(error == 0){
                 FD_CLR(clientfd, &pc.read_set);
@@ -60,8 +61,10 @@ int main(){
                 printf("closed connection: %d \n", clientfd);
                 continue;
             }
-            if(handle_client(&pc, &pr, mysql, buf, clientfd, send_string)){
-                writeall(clientfd, send_string, MAX_LEN);
+            if(handle_client(&pc, &pr, mysql, buf, clientfd, &si)){
+                for(int sendidx=0; sendidx < si.size; sendidx++){
+                    writeall(si.send_fds[sendidx], si.send_string, MAX_LEN);
+                }
             }            
         }
     }

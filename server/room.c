@@ -1,92 +1,21 @@
 #include "room.h"
 
-void* room_main(void* args){
-    thread_arg *ta = (thread_arg*)args;
-    pool_room *pr = ta->pr;
-    int main_p1fd = ta->p1fd;
-    int roomidx = ta->roomidx;
-    free(ta);
+int room_main(pool_room* pr, char **arguments, int clientfd, send_info *si){
+    int room_id = atoi(arguments[1]);
+    arguments = &arguments[2];
 
-    pthread_detach(pthread_self());
-    GAME_INFORMATION* gi=init_room();
-    
-    struct addrinfo *listp, *p;
-    struct addrinfo hints;
-    int listenfd;
-    int opt=1;
-
-    memset(&hints, 0, sizeof(struct addrinfo));
-    hints.ai_socktype = SOCK_STREAM;
-    hints.ai_flags = AI_PASSIVE; // address suitable for server
-    hints.ai_flags |=  AI_ADDRCONFIG; // returns valid addresses
-    hints.ai_flags |= AI_NUMERICSERV; // only accept number ip address
-
-    char port_string[6];
-    unsigned short port;
-    for(port=49152; port < 65535; port++){
-        snprintf(port_string, sizeof(port_string), "%d", port);
-        if(getaddrinfo(NULL, port_string, &hints, &listp)==0){
-            break;
-        }
-        printf("can't connect to port: %d\n", port);
+    room_option *room = &pr->room[room_id];
+    // PLY
+    if(!strcmp(arguments[0], "PLY")){
+        start_game(room, si);
     }
+    // TUR
+
+    // SEL
+
+    // MOV
     
     
-    for(p=listp; p != NULL; p=p->ai_next){
-        printf("try socket\n");
-        if((listenfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) < 0)
-            continue;
-        printf("try bind2\n");
-        setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
-        if(bind(listenfd, p->ai_addr, p->ai_addrlen) == 0){
-            break;
-        }
-        close(listenfd);
-    }
-
-    char address[1024];
-    
-    int en;
-    if((en = getnameinfo(p->ai_addr, p->ai_addrlen, address, sizeof(address), NULL, 0, NI_NUMERICHOST)) != 0){
-        printf("error in getnameinfo\n");
-        printf("%s\n", gai_strerror(en));
-    }
-    
-    if(listen(listenfd, 100) < 0){
-        close(listenfd);
-        pthread_exit((void*)-1);
-    }
-    
-
-
-    // send address to p1fd
-    // 그러면 p1에서 connect
-    char buf[MAX_LEN];
-    memset(buf, 0, MAX_LEN);
-    sprintf(buf, "ENT\n%s:%d\n", "3.36.90.38", 56843); // address 보내야함
-	
-	printf("%s\n", buf);
-	
-    writeall(main_p1fd, buf, MAX_LEN);
-	
-
-    
-    sem_wait(&pr->mutex);
-    strncpy(pr->room[roomidx].address, "3.36.90.38", 128);
-    pr->room[roomidx].port = 56843;
-    sem_post(&pr->mutex);
-
-
-    freeaddrinfo(listp);
-    if(!p) pthread_exit((void*)-1);
-
-    struct sockaddress_storage *clientaddr;
-    socklen_t clientlen = sizeof(struct sockaddr_storage);
-
-    fd_set read_set;
-    fd_set ready_set;
-    FD_ZERO(&read_set);
-    FD_SET(listenfd, &read_set);
 
     int nready;
     int maxfd = listenfd;
@@ -121,6 +50,16 @@ void* room_main(void* args){
 
     exit_room(gi,pr);
     pthread_exit(0);
+}
+
+int start_game(room_option *room, send_info *si){
+    room->gi = init_room();
+    room->b = initBoard();
+    
+    si->send_fds[(si->size)++] = room->player_fd[0];
+    si->send_fds[(si->size)++] = room->player_fd[1];
+
+    sendInfoToClient(room->gi, room->b);
 }
 
 GAME_INFORMATION* init_room(){
