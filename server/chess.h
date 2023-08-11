@@ -9,8 +9,7 @@ chess.c - prototypes adn definitions for chess
 #include <stdbool.h>
 
 /* macro functions */
-#define ROW         8
-#define COL         8
+
 #define BLANK       0
 #define BLACK       20
 #define B_ROOK      21
@@ -26,7 +25,6 @@ chess.c - prototypes adn definitions for chess
 #define W_QUEEN     34
 #define W_KING      35
 #define W_PAWN      36
-#define PEICE_CNT   16
 #define PLAY_TIME   3000
 
 /* 게임 진행에 필요한 변수들을 저장하는 구조체 */
@@ -35,30 +33,7 @@ typedef struct coordi{
     int col;
 }coordi;
 
-typedef struct chess_board{
-    //기본 정보들
-    int board[ROW][COL];
-    int board_copy[ROW][COL];
-    int white_death[PEICE_CNT];
-    int w_death_idx;
-    int black_death[PEICE_CNT];
-    int b_death_idx;
-    //unsinged char** board_history;
-    bool black_check;
-    bool white_check;
-    int player_turn;
-    //special rule 변수
-    int promotion_r;
-    int promotion_c;
-    bool castling_check[6];
-    bool castling_flag;
-    int last_move[5];
-    bool en_passant_flag;
 
-    //게임 시간
-    int black_time;
-    int white_time;
-}chess_board;
 
 
 /* 게임 시작 및 초기화 & 게임 종료 */

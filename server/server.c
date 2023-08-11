@@ -94,8 +94,8 @@ void parseline(char *buf, char **arguments){
 
 }
 
-int handle_client(pool_client *pc, pool_room *pr, MYSQL *mysql, char buf[], int client, char send_string[]){
-    char *arguments[5];
+int handle_client(pool_client *pc, pool_room *pr, MYSQL *mysql, char buf[], int clientfd, send_info *si){
+    char *arguments[32];
 
     parseline(buf, arguments);
     
@@ -103,12 +103,14 @@ int handle_client(pool_client *pc, pool_room *pr, MYSQL *mysql, char buf[], int 
     if(!strcmp(buf, "LOG")){
         // arguments 0 = id, 1 = pw
         printf("login attempt:\n");
-        bool success = user_login(mysql, pc, arguments, client);
+        bool success = user_login(mysql, pc, arguments, clientfd);
         if(success){
             printf("success! login\n");
-            strcpy(send_string, "SUC\n");
+            si->send_fds[(si->size)++] = clientfd;
+            strcpy(si->send_string, "SUC\n");
         }
         else{
+            strcpy(si->send_string, "FAL\n");
             printf("failed login!\n");
         }
     }
@@ -117,19 +119,29 @@ int handle_client(pool_client *pc, pool_room *pr, MYSQL *mysql, char buf[], int 
         user_register(mysql, arguments);
     }
     else if(!strcmp(buf, "FET")){
-        fetch_information(pr, send_string);
+        fetch_information(pr, si);
+        si->send_fds[(si->size)++] = clientfd;
         printf("fet\n");
     }
     else if(!strcmp(buf, "CRE")){
         // CRE name maxuser time
-        create_room(pr, arguments, client);
-        return false;
+        create_room(pr, arguments, clientfd, si);
+        si->send_fds[(si->size)++] = clientfd;
     }
     else if(!strcmp(buf, "ENT")){
-        enter_room(pr, atoi(arguments[1]), send_string);
+        // ENT roomid
+        if(enter_room(pr, atoi(arguments[1]), clientfd)){
+            strcpy(si->send_string, "SUC\n");
+        }
+        else{
+            strcpy(si->send_string, "FAL\n");
+        }
+        si->send_fds[(si->size)++] = clientfd;
+        
     }   
     else if (!strcmp(buf, "ROO")){
-
+        // ROO roomid PLY
+        room_main(pr, arguments, clientfd, si);
     }
 
 
@@ -180,30 +192,44 @@ int user_register(MYSQL *mysql, char **arguments){
     return true;
 }
 
-int fetch_information(pool_room* pr, char send_string[]){
-    char *s = send_string;
-    int total_len = 0;
-    
+int fetch_information(pool_room* pr, send_info *si){
     char sbuf[MAX_LEN];
-
     // fetch information from room_pool
     for(int i=0; i<MAX_ROOM; i++){
         if(pr->room[i].room_id != -1){
             sprintf(sbuf, "%d\\%s\\%d\\%d\\%d\n", pr->room[i].room_id, pr->room[i].name, pr->room[i].max_user_count, pr->room[i].cur_user_count, pr->room[i].time);
-            strncat(send_string, sbuf, MAX_LEN);
+            strncat(si->send_string, sbuf, MAX_LEN);
         }
         
     }
-    
     return true;
 }
 
-int create_room(){
+int create_room(pool_room *pr, char **arguments, int clientfd, send_info *si){
+    int room_id = add_room_to_pool(pr, arguments);
+    if(room_id == -1){
+        return false;
+    }
 
+    pr->room[room_id].player_fd[0] = clientfd;
+    pr->room[room_id].cur_user_count++;
+
+    char buf[32];
+    sprintf(buf, "%d\n", room_id);
+    strncpy(si->send_string, buf, 32);
+    return true;
 }
 
-int enter_room(){
+int enter_room(pool_room *pr, int room_id, int clientfd){
+    // check for errors
+    if(pr->room[room_id].room_id == -1 ||
+       pr->room[room_id].cur_user_count >= pr->room[room_id].max_user_count){
+        return false;
+    }
 
+    pr->room[room_id].player_fd[1] = clientfd;
+    pr->room[room_id].cur_user_count++;
+    return true;
 }
 
 int add_room_to_pool(pool_room *pr, char **arguments){
@@ -218,7 +244,7 @@ int add_room_to_pool(pool_room *pr, char **arguments){
             return i;
         }
     }
-    return 0;
+    return -1;
 }
 
 int open_clientfd(){
