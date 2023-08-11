@@ -5,16 +5,19 @@ int room_main(pool_room* pr, char **arguments, int clientfd, send_info *si){
     arguments = &arguments[2];
 
     room_option *room = &pr->room[room_id];
-    // PLY
+    // PLY: init game, send (board info, turn)
     if(!strcmp(arguments[0], "PLY")){
         start_game(room, si);
     }
-    // TUR
-
-    // SEL
-
-    // MOV
-    
+    // SEL: check if right player(turn), check if right piece(black/white), send moveable
+    else if(!strcmp(arguments[0], "SEL")){
+        
+    }
+    // MOV: check player turn, check right piece, check moveable
+    // if moveable -> SUC, send 
+    else if(!strcmp(arguments[0], "MOV")){
+        
+    }
     
 
     int nready;
