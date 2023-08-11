@@ -274,7 +274,7 @@ void makeString(char** buf, char* string){
     }
 }
 
-void sendInfoToClient(GAME_INFORMATION* gi, chess_board* b, int p1fd, int p2fd){
+void sendInfoToClient(GAME_INFORMATION* gi, chess_board* b){
     char buf[MAX_LEN];
     fprintf(buf,"TUR\n%d\n",gi->turn);
     //보드 위 정보를 저장
@@ -286,9 +286,6 @@ void sendInfoToClient(GAME_INFORMATION* gi, chess_board* b, int p1fd, int p2fd){
         }
     }
     strcat(buf,"\n");
-
-    writeall(p1fd,buf,MAX_LEN);
-    writeall(p2fd,buf,MAX_LEN);
 }
 
 void sendMoveableToClient(GAME_INFORMATION* gi, coordi* moveable_pos,int idx,int p1fd,int p2fd){
