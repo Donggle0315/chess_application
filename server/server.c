@@ -215,7 +215,7 @@ int create_room(pool_room *pr, char **arguments, int clientfd, send_info *si){
     pr->room[room_id].cur_user_count++;
 
     char buf[32];
-    sprintf(buf, "%d\n", room_id);
+    sprintf(buf, "ENT\n%d\n", room_id);
     strncpy(si->send_string, buf, 32);
     return true;
 }

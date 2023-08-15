@@ -56,7 +56,7 @@ class LoginScreen():
             self.handle_events()
             self.manager.update(delta)
             self.render()
-        return self.next_window
+        return self.next_window, True
     
     def handle_events(self):
         # handle events in login screen
@@ -99,7 +99,7 @@ class LoginScreen():
 
 
 class LobbyScreen():
-    def __init__(self, window: pygame.Surface, sock: socket, room_sock: socket, clock: pygame.time.Clock):
+    def __init__(self, window: pygame.Surface, sock: socket, clock: pygame.time.Clock):
         # lobby screen
         self.manager = pygame_gui.UIManager((1280, 720))
 
@@ -171,10 +171,10 @@ class LobbyScreen():
         self.rooms_panel = []
     
         self.sock = sock
-        self.room_sock = room_sock
         self.room_display_count = 6
         self.running = True
         self.next_window = ''
+        self.room_id = -1
         self.make_rooms_panel()
 
     def run(self):
@@ -185,7 +185,9 @@ class LobbyScreen():
             
             self.manager.update(delta)
             self.render()
-        return self.next_window
+
+        return self.next_window, self.room_id
+    
     def handle_events(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -214,12 +216,9 @@ class LobbyScreen():
                     print(data, len(data[0]))
 
                     if data[0] == b'ENT':
-                        address, port = data[1].split(b':')
-                        address = address.decode()
-                        port = port.decode()
-                        self.room_sock.connect((address, int(port)))
                         self.running = False
                         self.next_window = 'game'
+                        self.room_id = int(data[1].decode())
                         return
                     else:
                         print('wrong data')
@@ -234,12 +233,13 @@ class LobbyScreen():
                         self.sock.sendall(bytetext)
 
                         data = recvall(self.sock, MAXLEN).split(b'\n')
-                        if data[0] == b'ENT':
-                            address, port = data[1].split(b':')
-                            address = address.decode()
-                            port = port.decode()
-                            self.room_sock.connect((address, int(port)))
-                            return 'game'
+                        if data[0] == b'SUC':
+                            self.running = False
+                            self.next_window = 'game'
+                            self.room_id = int(data[1].decode())
+                            return
+                        else:
+                            print('failed because of unknown reason')
                         
 
             self.manager.process_events(event)
@@ -391,13 +391,9 @@ class GameScreen():
     def run(self):
         while True:
             delta = self.clock.tick(120)/1000
-            
+            self.handle_events()
             self.manager.update(delta)
-
-            self.window.blit(self.background, (0, 0))
-            self.display_board()
-            self.manager.draw_ui(self.window)
-            pygame.display.flip()
+            self.render()
 
     def handle_events(self):
         for event in pygame.event.get():
@@ -440,6 +436,11 @@ class GameScreen():
                     
             self.manager.process_events(event)
 
+    def render(self):   
+        self.window.blit(self.background, (0, 0))
+        self.display_board()
+        self.manager.draw_ui(self.window)
+        pygame.display.flip()
 
     def display_board(self):
         for i in range(len(self.board)):
@@ -466,23 +467,23 @@ def start_game():
 
     # socket interface
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    room_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
     # connect to main_server with client_socket
     client_socket.connect((HOST, PORT))
     login_screen = LoginScreen(window, client_socket, clock)
-    lobby_screen = LobbyScreen(window, client_socket, room_socket, clock)
+    lobby_screen = LobbyScreen(window, client_socket, clock)
 
 
     window_state = 'login'
+    info = 0
     while True:
         if window_state == 'login':
-            window_state = login_screen.run()
+            window_state, _ = login_screen.run()
         elif window_state == 'lobby':
-            window_state = lobby_screen.run()
+            window_state, info = lobby_screen.run()
         elif window_state == 'game':
-            game_screen = GameScreen(window, room_socket, clock)
-            window_state = game_screen.run()
+            game_screen = GameScreen(window, client_socket, clock, info)
+            window_state, info = game_screen.run()
 
 
 def recvall(sock, size):
