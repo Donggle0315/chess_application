@@ -107,10 +107,10 @@ int handle_client(pool_client *pc, pool_room *pr, MYSQL *mysql, char buf[], int 
         if(success){
             printf("success! login\n");
             si->send_fds[(si->size)++] = clientfd;
-            strcpy(si->send_string, "SUC\n");
+            strcpy(si->send_string, "LOG\nSUC\n");
         }
         else{
-            strcpy(si->send_string, "FAL\n");
+            strcpy(si->send_string, "LOG\nFAL\n");
             printf("failed login!\n");
         }
     }
@@ -129,12 +129,13 @@ int handle_client(pool_client *pc, pool_room *pr, MYSQL *mysql, char buf[], int 
         si->send_fds[(si->size)++] = clientfd;
     }
     else if(!strcmp(buf, "ENT")){
-        // ENT roomid
-        if(enter_room(pr, atoi(arguments[1]), clientfd)){
-            strcpy(si->send_string, "SUC\n");
+        // ENT room_id
+        int room_id = atoi(arguments[1]);
+        if(enter_room(pr, room_id, clientfd)){
+            sprintf(si->send_string, "ENT\nSUC\n%d\n", room_id);
         }
         else{
-            strcpy(si->send_string, "FAL\n");
+            sprintf(si->send_string, "ENT\nFAL\n%d\n", room_id);
         }
         si->send_fds[(si->size)++] = clientfd;
         
@@ -194,6 +195,7 @@ int user_register(MYSQL *mysql, char **arguments){
 
 int fetch_information(pool_room* pr, send_info *si){
     char sbuf[MAX_LEN];
+    strncat(si->send_string, "FET\n", 5);
     // fetch information from room_pool
     for(int i=0; i<MAX_ROOM; i++){
         if(pr->room[i].room_id != -1){
@@ -215,7 +217,7 @@ int create_room(pool_room *pr, char **arguments, int clientfd, send_info *si){
     pr->room[room_id].cur_user_count++;
 
     char buf[32];
-    sprintf(buf, "ENT\n%d\n", room_id);
+    sprintf(buf, "CRE\nSUC\n%d\n", room_id);
     strncpy(si->send_string, buf, 32);
     return true;
 }

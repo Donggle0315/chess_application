@@ -1,8 +1,9 @@
 import pygame
 import pygame_gui
 import socket
+from enum import Enum
 
-ADDR = '13.209.83.147:58024'
+ADDR = '127.0.0.1:12345'
 HOST, PORT = ADDR.split(':')
 PORT = int(PORT)
 MAXLEN = 2048
@@ -26,11 +27,118 @@ class ChessSprite():
             self.surface.blit(self.chess_sprites[99], (0, 0, self.rect.width,self.rect.height))
         window.blit(self.surface, self.rect)
 
+class GameEvent(Enum):
+    NULL_EVENT = 0
+    LOGIN_SUCCESS = 1
+    LOGIN_FAIL = 2
+    FETCH_ROOM_INFO = 3
+    CREATE_ROOM_SUCCESS = 4
+    CREATE_ROOM_FAIL = 5
+    ENTER_ROOM_SUCCESS = 6
+    ENTER_ROOM_FAIL = 7
+    ROOM_SELECT_REPLY = 8
+    ROOM_MOVE_SUCCESS = 9
+    ROOM_MOVE_FAIL = 10
+    ROOM_TURN_CHANGE = 11
+
+class NetworkPygame():
+    def __init__(self, HOST, PORT, GAME_EVENT):
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.sock.connect((HOST, PORT))
+
+        self.sock.setblocking(False)
+        self.data = b''
+        self.GAME_EVENT = GAME_EVENT
+
+    # sends info to socket
+    def sendall(self, data):
+        bytetext = str.encode(data).ljust(MAXLEN, b'\0')
+        self.sock.sendall(bytetext)
     
+    # has to call this every loop. puts socket info into pygame events!
+    def process_network(self):
+        try:
+            self.data = self.sock.recv(MAXLEN)
+        except socket.error as e:
+            return
+
+        print(self.data)
+        if len(self.data) >= MAXLEN:
+            got_data = self.data[:MAXLEN]
+            self.data = self.data[MAXLEN:]
+            self.post_event_based_on_data(got_data)
+
+    def post_event_based_on_data(self, got_data):
+        msg = got_data.decode().split('\n')
+        print(msg)
+
+        if msg[0] == 'LOG':
+            if msg[1] == 'SUC':
+                new_event = pygame.event.Event(self.GAME_EVENT, 
+                                               {'utype': GameEvent.LOGIN_SUCCESS})
+                pygame.event.post(new_event)  
+            elif msg[1] == 'FAL':
+                new_event = pygame.event.Event(self.GAME_EVENT, 
+                                               {'utype': GameEvent.LOGIN_FAIL})
+                pygame.event.post(new_event)  
+        elif msg[0] == 'FET':
+            arr = []
+            for i in range(1, len(msg)):
+                room = msg[i].split('\\')
+                d = {}
+                d['room_id'] = room[0]
+                d['room_name'] = room[1]
+                d['max_user_count'] = room[2]
+                d['cur_user_count'] = room[3]
+                d['time'] = room[4]
+                arr.append(d)
+            new_event = pygame.event.Event(self.GAME_EVENT, 
+                                           {'utype': GameEvent.FETCH_ROOM_INFO,
+                                            'data': arr})
+            pygame.event.post(new_event)  
+        
+        elif msg[0] == 'CRE':
+            if msg[1] == "SUC":
+                room_id = int(msg[2])
+                new_event = pygame.event.Event(self.GAME_EVENT, {'utype': GameEvent.CREATE_ROOM_SUCCESS,
+                                                                  'room_id': room_id })
+                pygame.event.post(new_event)  
+
+        elif msg[0] == 'ENT':
+            if msg[1] == 'SUC':
+                room_id = int(msg[2])
+                new_event = pygame.event.Event(self.GAME_EVENT, {'utype': GameEvent.ENTER_ROOM_SUCCESS,
+                                                                  'room_id': room_id })
+                pygame.event.post(new_event)  
+        
+        elif msg[0] == 'ROO':
+            if msg[1] == 'SEL':
+                turn = int(msg[2])
+                moveable = msg[3].split()
+                new_event = pygame.event.Event(self.GAME_EVENT, {'utype': GameEvent.ROOM_SELECT_REPLY,
+                                                                  'turn': turn,
+                                                                  'moveable': moveable })
+                pygame.event.post(new_event)
+
+            elif msg[1] == 'MOV':
+                turn = int(msg[2])
+                if msg[3] == 'SUC':
+                    new_event = pygame.event.Event(self.GAME_EVENT, {'utype': GameEvent.ROOM_MOVE_SUCCESS,
+                                                                     'turn': turn })
+                    pygame.event.post(new_event)
+
+            elif msg[1] == 'TUR':
+                turn = int(msg[2])
+                board_str = msg[3]
+                new_event = pygame.event.Event(self.GAME_EVENT, {'utype': GameEvent.ROOM_TURN_CHANGE,
+                                                                 'turn': turn,
+                                                                 'board_str': board_str })
+                pygame.event.post(new_event)
+
 
 
 class LoginScreen():
-    def __init__(self, window: pygame.Surface, sock: socket, clock: pygame.time.Clock):
+    def __init__(self, window: pygame.Surface, sock: NetworkPygame, clock: pygame.time.Clock, GAME_EVENT):
         # login screen
         self.manager = pygame_gui.UIManager((1280, 720))
         self.login_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect(200, 0, 200, 120), 
@@ -49,10 +157,13 @@ class LoginScreen():
         self.next_window = ''
         self.clock = clock
         self.window = window
+        self.GAME_EVENT = GAME_EVENT
+
     def run(self):
         # run the app
         while self.running:
             delta = self.clock.tick(120)/1000
+            self.sock.process_network()
             self.handle_events()
             self.manager.update(delta)
             self.render()
@@ -64,24 +175,20 @@ class LoginScreen():
             if event.type == pygame.QUIT:
                 quit()
 
-            if event.type == pygame_gui.UI_BUTTON_PRESSED:
+            elif event.type == pygame_gui.UI_BUTTON_PRESSED:
                 if event.ui_element == self.login_button:
                     print('sending login information')
                     id_text = self.id_text_box.get_text()
                     pw_text = self.pw_text_box.get_text()
                     sendtext = f'LOG\n{id_text}\n{pw_text}\n'
-                    bytetext = str.encode(sendtext).ljust(MAXLEN, b'\0')
-                    self.sock.sendall(bytetext)
+                    self.sock.sendall(sendtext)
                     
-                    data = recvall(self.sock, MAXLEN).split(b'\n')
-                    head = data[0].decode()
-                    if head == 'SUC':
+            elif event.type == self.GAME_EVENT:
+                if hasattr(event, 'utype'):
+                    if event.utype == GameEvent.LOGIN_SUCCESS:
                         self.running = False
                         self.next_window = 'lobby'
                         return
-                    else:
-                        # things to do if login fails
-                        pass
 
             self.manager.process_events(event)
 
@@ -99,7 +206,7 @@ class LoginScreen():
 
 
 class LobbyScreen():
-    def __init__(self, window: pygame.Surface, sock: socket, clock: pygame.time.Clock):
+    def __init__(self, window: pygame.Surface, sock: NetworkPygame, clock: pygame.time.Clock, GAME_EVENT):
         # lobby screen
         self.manager = pygame_gui.UIManager((1280, 720))
 
@@ -176,11 +283,16 @@ class LobbyScreen():
         self.next_window = ''
         self.room_id = -1
         self.make_rooms_panel()
+        self.GAME_EVENT = GAME_EVENT
+        
+        self.creating_room = False
 
     def run(self):
-        self.rooms = self.fetch_room()
+        self.fetch_room()
         while self.running:
             delta = self.clock.tick(120)/1000
+
+            self.sock.process_network()
             self.handle_events()
             
             self.manager.update(delta)
@@ -196,12 +308,12 @@ class LobbyScreen():
             if event.type == pygame_gui.UI_BUTTON_PRESSED:
                 if event.ui_element == self.lobby_refresh_bt:
                     print('refresh')
-                    self.rooms = self.fetch_room()
-                    self.display_rooms_panel()
+                    self.fetch_room()
 
                 if event.ui_element == self.create_room_bt:
                     print('create room')
                     self.create_room_window.show()
+
                 if event.ui_element == self.final_create_room_bt:
                     print('create room final')
                     rname = self.room_name_text_box.text
@@ -209,41 +321,46 @@ class LobbyScreen():
                     rtime = self.time_menu.selected_option
 
                     sendtext = f'CRE\n{rname}\n{rmax_user}\n{rtime}\n'
-                    bytetext = str.encode(sendtext).ljust(MAXLEN, b'\0')
-                    self.sock.sendall(bytetext)
+                    self.sock.sendall(sendtext)
                     
-                    data = recvall(self.sock, MAXLEN).split(b'\n')
-                    print(data, len(data[0]))
-
-                    if data[0] == b'ENT':
-                        self.running = False
-                        self.next_window = 'game'
-                        self.room_id = int(data[1].decode())
-                        return
-                    else:
-                        print('wrong data')
+                    self.creating_room = True
+                    # disable all gui later
 
                 for i, (p, b, room) in enumerate(self.rooms_panel):
                     if event.ui_element == b:
                         cur_idx, _ = self.get_room_range()
                         cur_idx += i
+                        room_id = room[cur_idx]['room_id']
 
-                        sendtext = f'ENT\n{room[cur_idx]["room_id"]}\n'
-                        bytetext = str.encode(sendtext).ljust(MAXLEN, b'\0')
-                        self.sock.sendall(bytetext)
+                        self.try_enter_room(room_id)
 
-                        data = recvall(self.sock, MAXLEN).split(b'\n')
-                        if data[0] == b'SUC':
-                            self.running = False
-                            self.next_window = 'game'
-                            self.room_id = int(data[1].decode())
-                            return
-                        else:
-                            print('failed because of unknown reason')
-                        
+            elif event.type == self.GAME_EVENT:
+                if hasattr(event, 'utype'):
+                    if event.utype == GameEvent.FETCH_ROOM_INFO:
+                        rooms = event.data
+                        self.display_rooms_panel()
+
+                    elif event.utype == GameEvent.CREATE_ROOM_SUCCESS:
+                        self.creating_room = False
+                        self.try_enter_room(event.room_id)
+
+                    elif event.utype == GameEvent.ENTER_ROOM_SUCCESS:
+                        self.running = False
+                        self.next_window = 'game'
+                        self.room_id = event.room_id
+                        return
+
+                    elif event.utype == GameEvent.ENTER_ROOM_FAIL:
+                        print('failed entering room')
+                
 
             self.manager.process_events(event)
-    
+
+    def try_enter_room(self, room_id):
+        sendtext = f'ENT\n{room_id}\n'
+        self.sock.sendall(sendtext)
+        
+
     def render(self):
         self.window.blit(self.background, (0, 0))
         self.manager.draw_ui(self.window)
@@ -304,41 +421,16 @@ class LobbyScreen():
     # fetch room information
     def fetch_room(self):
         print('fet')
-        arr = []
         sendtext = "FET\n"
-        bytetext = sendtext.encode().ljust(MAXLEN, b'\0')
-        self.sock.sendall(bytetext)
-        data = recvall(self.sock, MAXLEN).rstrip(b'\x00')
+        self.sock.sendall(sendtext)
 
-        # no rooms
-        if data == b'':
-            return []
-
-        data = data.split(b'\n')[:-1]
-        
-
-        for room in data:
-            room = room.decode().split('\\')
-            print(room)
-            d = {}
-            d['room_id'] = room[0]
-            d['room_name'] = room[1]
-            d['max_user_count'] = room[2]
-            d['cur_user_count'] = room[3]
-            d['time'] = room[4]
-            d['address'] = room[5]
-            arr.append(d)
-
-        return arr
-    
     def quit(self):
         # close the window, close the sockets, exit program
         pygame.quit()
-        self.sock.close()
         exit()
 
 class GameScreen():
-    def __init__(self, window: pygame.Surface, sock: socket, clock: pygame.time.Clock):
+    def __init__(self, window: pygame.Surface, sock: NetworkPygame, clock: pygame.time.Clock, room_id, GAME_EVENT):
         # room
         self.manager = pygame_gui.UIManager((1280, 720))
         self.background = pygame.Surface((1280, 720))
@@ -379,6 +471,14 @@ class GameScreen():
             self.board.append(row)
             self.board_gui.append(row_gui)
 
+        # gui elements
+        self.start_game_bt_rect = pygame.Rect(0, 0, 50, 50)
+        self.start_game_bt = pygame_gui.elements.UIButton(relative_rect=self.start_game_bt, 
+                                                          text='Start Game!',
+                                                          manager=self.manager,
+                                                          anchors={'right': 'right',
+                                                                   'bottom': 'bottom'})
+
         self.board[0][0] = 25
 
         self.turn = 0
@@ -387,10 +487,13 @@ class GameScreen():
         self.window = window
         self.sock = sock
         self.clock = clock
+        self.room_id = room_id
+        self.GAME_EVENT = GAME_EVENT
 
     def run(self):
         while True:
             delta = self.clock.tick(120)/1000
+            self.sock.process_network()
             self.handle_events()
             self.manager.update(delta)
             self.render()
@@ -400,7 +503,7 @@ class GameScreen():
             if event.type == pygame.QUIT:
                 self.quit()
             
-            if event.type == pygame.MOUSEBUTTONDOWN:
+            elif event.type == pygame.MOUSEBUTTONDOWN:
                 pos = pygame.mouse.get_pos()
                 if pos[0] > self.start_x and pos[0] < self.start_x+self.size*8 and pos[1] > self.start_y and pos[1] < self.start_y+self.size*8:
                     # TODO: if turn
@@ -409,30 +512,40 @@ class GameScreen():
                             if j.rect.collidepoint(pos):
                                 print(j.board_coord)
                                 coord = j.board_coord
+                                # when clicked on location where is not movable (no marker)
                                 if self.board_gui[coord[1]][coord[0]].moveable == False:
-                                    sendtext = f'SEL\n{self.turn}\n{coord[1]}{coord[0]}\n'
-                                    bytetext = str.encode(sendtext)
-                                    self.sock.sendall(bytetext)
+                                    sendtext = f'ROO\n{self.room_id}\nSEL\n{self.turn}\n{coord[1]}{coord[0]}\n'
+                                    self.sock.sendall(sendtext)
+                                    cur_select = [c, r]
 
-                                    data = recvall(self.sock, MAXLEN).split(b'\n')
-                                    if data[0] == b'SEL' and int(data[1]) == self.turn:
-                                        moveable = data[2].split()
-                                        self.disable_moveable(self.board_gui)
-                                        for m in moveable:
-                                            r = int(m[0])
-                                            c = int(m[1])
-                                            cur_select = [c, r]
-                                            self.board_gui[r][c].moveable = True
+                                # when clicking on marker, move the piece
                                 else:
-                                    sendtext = f'MOV\n{cur_select[1]}{cur_select[0]}{coord[1]}{coord[0]}\n'
-                                    bytetext = str.encode(sendtext)
-                                    self.sock.sendall(bytetext)
-
-                                    data = recvall(self.sock, MAXLEN).split(b'\n')
+                                    sendtext = f'ROO\nMOV\n{cur_select[1]}{cur_select[0]}{coord[1]}{coord[0]}\n'
+                                    self.sock.sendall(sendtext)
                                     
 
-            if event.type == pygame_gui.UI_BUTTON_PRESSED:
-                pass
+            elif event.type == pygame_gui.UI_BUTTON_PRESSED:
+                if event.ui_element == self.start_game_bt:
+                    sendtext = f'ROO\nPLY\n'
+                    self.sock.sendall(sendtext)
+
+            elif event.type == self.GAME_EVENT:
+                if hasattr(event, 'utype'):
+                    if event.utype == GameEvent.ROOM_SELECT_REPLY and event.turn == self.turn:
+                        self.disable_moveable(self.board_gui)
+                        for m in event.moveable:
+                            r = int(m[0])
+                            c = int(m[1])
+                            self.board_gui[r][c].moveable = True
+                    elif event.utype == GameEvent.ROOM_TURN_CHANGE:
+                        self.turn = event.turn
+                        self.disable_moveable(self.board_gui)
+                        # parse board_str
+                        board_str = event.board_str.split()
+                        for i in range(8):
+                            for j in range(8):
+                                self.board[i][j] = int(board_str[i*8+j])
+                            
                     
             self.manager.process_events(event)
 
@@ -458,21 +571,21 @@ class GameScreen():
         self.sock.close()
         exit()
 
+
 def start_game():
     # pygame init
     pygame.init()
     window = pygame.display.set_mode((1280,720))
     pygame.display.set_caption("Chess")
     clock = pygame.time.Clock()
+    GAME_EVENT = pygame.event.custom_type()
 
-    # socket interface
-    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    network = NetworkPygame(HOST, PORT, GAME_EVENT)
 
-    # connect to main_server with client_socket
-    client_socket.connect((HOST, PORT))
-    login_screen = LoginScreen(window, client_socket, clock)
-    lobby_screen = LobbyScreen(window, client_socket, clock)
+    login_screen = LoginScreen(window, network, clock, GAME_EVENT)
+    lobby_screen = LobbyScreen(window, network, clock, GAME_EVENT)
 
+    
 
     window_state = 'login'
     info = 0
@@ -482,22 +595,8 @@ def start_game():
         elif window_state == 'lobby':
             window_state, info = lobby_screen.run()
         elif window_state == 'game':
-            game_screen = GameScreen(window, client_socket, clock, info)
+            game_screen = GameScreen(window, network, clock, info, GAME_EVENT)
             window_state, info = game_screen.run()
-
-
-def recvall(sock, size):
-    data = b""
-    while len(data) < size:
-        chunk = sock.recv(size - len(data))
-        if not chunk:
-            break
-        data += chunk
-    return data
-
-
-
-
 
 
 
