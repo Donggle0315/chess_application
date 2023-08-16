@@ -213,8 +213,7 @@ int create_room(pool_room *pr, char **arguments, int clientfd, send_info *si){
         return false;
     }
 
-    pr->room[room_id].player_fd[0] = clientfd;
-    pr->room[room_id].cur_user_count++;
+   
 
     char buf[32];
     sprintf(buf, "CRE\nSUC\n%d\n", room_id);
@@ -228,9 +227,8 @@ int enter_room(pool_room *pr, int room_id, int clientfd){
        pr->room[room_id].cur_user_count >= pr->room[room_id].max_user_count){
         return false;
     }
-
-    pr->room[room_id].player_fd[1] = clientfd;
-    pr->room[room_id].cur_user_count++;
+    
+    pr->room[room_id].player_fd[pr->room[room_id].cur_user_count++] = clientfd;
     return true;
 }
 
