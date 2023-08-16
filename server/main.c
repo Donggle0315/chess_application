@@ -70,6 +70,6 @@ int main(){
     }
 
 
-    terminate_program(mysql);
+    //terminate_program(mysql);
     return 0;
 }
