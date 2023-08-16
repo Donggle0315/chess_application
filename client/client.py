@@ -3,7 +3,7 @@ import pygame_gui
 import socket
 from enum import Enum
 
-ADDR = '127.0.0.1:12345'
+ADDR = '52.78.48.244:50797'
 HOST, PORT = ADDR.split(':')
 PORT = int(PORT)
 MAXLEN = 2048
