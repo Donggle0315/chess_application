@@ -548,6 +548,7 @@ class GameScreen():
                         for i in range(8):
                             for j in range(8):
                                 s = board_str[(i*8+j)*2] + board_str[(i*8+j)*2+1]
+                                print(s)
                                 self.board[i][j] = int(s)
                             
                     
