@@ -536,11 +536,12 @@ class GameScreen():
             elif event.type == self.GAME_EVENT:
                 if hasattr(event, 'utype'):
                     if event.utype == GameEvent.ROOM_SELECT_REPLY and event.turn == self.turn:
-                        self.disable_moveable(self.board_gui)
+                        self.disable_moveable()
                         for m in event.moveable:
                             r = int(m[0])
                             c = int(m[1])
                             self.board_gui[r][c].moveable = True
+                            print(r, c, self.board_gui[r][c].moveable)
                     elif event.utype == GameEvent.ROOM_TURN_CHANGE:
                         self.turn = event.turn
                         self.disable_moveable()
