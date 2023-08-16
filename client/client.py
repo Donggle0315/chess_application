@@ -543,7 +543,7 @@ class GameScreen():
                         self.turn = event.turn
                         self.disable_moveable()
                         # parse board_str
-                        board_str = event.board_str.split()
+                        board_str = event.board_str
                         print(board_str)
                         for i in range(8):
                             for j in range(8):
