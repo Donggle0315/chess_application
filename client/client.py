@@ -21,6 +21,7 @@ class ChessSprite():
         self.moveable = False
 
     def draw(self, window, num):
+        self.surface.fill(self.color)
         if num in self.chess_sprites:
             self.surface.blit(self.chess_sprites[num], (0, 0, self.rect.width,self.rect.height))
         if self.moveable:
