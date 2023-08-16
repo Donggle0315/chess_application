@@ -522,13 +522,13 @@ class GameScreen():
 
                                 # when clicking on marker, move the piece
                                 else:
-                                    sendtext = f'ROO\nMOV\n{self.turn}\n{cur_select[1]}{cur_select[0]}{coord[1]}{coord[0]}\n'
+                                    sendtext = f'ROO\n{self.room_id}\nMOV\n{self.turn}\n{cur_select[1]}{cur_select[0]}{coord[1]}{coord[0]}\n'
                                     self.sock.sendall(sendtext)
                                     
 
             elif event.type == pygame_gui.UI_BUTTON_PRESSED:
                 if event.ui_element == self.start_game_bt:
-                    sendtext = f'ROO\nPLY\n'
+                    sendtext = f'ROO\n{self.room_id}\nPLY\n'
                     self.sock.sendall(sendtext)
 
             elif event.type == self.GAME_EVENT:
