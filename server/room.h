@@ -5,7 +5,6 @@ room.c - prototypes adn definitions for room
 #ifndef __ROOM_H__
 #define __ROOM_H__
 
-#define MAX_PLAYER_NUM  2
 #define ARGUMENT_NUM 5
 #define TUR 1
 #define SEL 2

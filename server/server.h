@@ -46,6 +46,7 @@ server.c - prototypes adn definitions for Chess Aplication
 #define TRUE 1
 #define FALSE 0
 
+#define MAX_PLAYER_NUM  2
 #define PLAYER1 11
 #define PLAYER2 12
 #define SPECTATOR 13
