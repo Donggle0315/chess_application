@@ -330,14 +330,14 @@ class LobbyScreen():
                     if event.ui_element == b:
                         cur_idx, _ = self.get_room_range()
                         cur_idx += i
-                        room_id = room[cur_idx]['room_id']
+                        room_id = self.rooms[cur_idx]['room_id']
 
                         self.try_enter_room(room_id)
 
             elif event.type == self.GAME_EVENT:
                 if hasattr(event, 'utype'):
                     if event.utype == GameEvent.FETCH_ROOM_INFO:
-                        rooms = event.data
+                        self.rooms = event.data
                         self.display_rooms_panel()
 
                     elif event.utype == GameEvent.CREATE_ROOM_SUCCESS:
@@ -386,7 +386,7 @@ class LobbyScreen():
 
     def display_rooms_panel(self):
         cur_idx, last_idx = self.get_room_range()
-
+        print(self.rooms, cur_idx, last_idx)
         xpos = 50
         ypos = 10
         positions = []
@@ -400,14 +400,14 @@ class LobbyScreen():
             p.hide()
 
         for i in range(cur_idx, last_idx):
-            if i >= len(self.room):
+            if i >= len(self.rooms):
                 break
-            cur_text_box = self.rooms_panel[i][1]
-            cur_text_box.set_text = 'Name: {}\nUser: {}/{}\nTime: {}\n'.format(
-                                                                self.room[i]['room_name'], 
-                                                                self.room[i]['cur_user_count'],
-                                                                self.room[i]['max_user_count'],
-                                                                self.room[i]['time'])
+            cur_text_box = self.rooms_panel[i][2]
+            cur_text_box.set_text('Name: {}\nUser: {}/{}\nTime: {}\n'.format(
+                                                                self.rooms[i]['room_name'], 
+                                                                self.rooms[i]['cur_user_count'],
+                                                                self.rooms[i]['max_user_count'],
+                                                                self.rooms[i]['time']))
             
             cur_panel = self.rooms_panel[i][0]
             cur_panel.set_relative_position((positions[i]))
