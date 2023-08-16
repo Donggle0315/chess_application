@@ -88,6 +88,12 @@ void handle_MOV(room_option *room, send_info *si, char** arguments){
     if(turn%2) si->send_fds[(si->size)++]=room->player_fd[0];
     else si->send_fds[(si->size)++]=room->player_fd[1];
     sendIsMoveToClient(room,si,flag,finish);
+    for(int sendidx=0; sendidx< si->size; sendidx++){
+        writeall(si->send_fds[sendidx],si->send_string,MAX_LEN);
+    }
+    si->send_fds[(si->size)++]=room->player_fd[0];
+    si->send_fds[(si->size)++]=room->player_fd[1];
+    sendInfoToClient(room, si);
 }
 
 GAME_INFORMATION* init_room(){
