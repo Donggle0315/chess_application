@@ -520,11 +520,12 @@ class GameScreen():
                                 if self.board_gui[coord[1]][coord[0]].moveable == False:
                                     sendtext = f'ROO\n{self.room_id}\nSEL\n{self.turn}\n{coord[1]}{coord[0]}\n'
                                     self.sock.sendall(sendtext)
-                                    self.cur_select = [coord[1], coord[0]]
+                                    self.cur_select = [coord[0], coord[1]]
 
                                 # when clicking on marker, move the piece
                                 else:
                                     sendtext = f'ROO\n{self.room_id}\nMOV\n{self.turn}\n{self.cur_select[1]}{self.cur_select[0]}{coord[1]}{coord[0]}\n'
+                                    print(sendtext)
                                     self.sock.sendall(sendtext)
                                     
 
