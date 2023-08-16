@@ -58,7 +58,7 @@ class NetworkPygame():
     # has to call this every loop. puts socket info into pygame events!
     def process_network(self):
         try:
-            self.data = self.sock.recv(MAXLEN)
+            self.data += self.sock.recv(MAXLEN)
         except socket.error as e:
             return
 
@@ -489,6 +489,7 @@ class GameScreen():
         self.clock = clock
         self.room_id = room_id
         self.GAME_EVENT = GAME_EVENT
+        self.client_id = -1
 
     def run(self):
         while True:
@@ -520,7 +521,7 @@ class GameScreen():
 
                                 # when clicking on marker, move the piece
                                 else:
-                                    sendtext = f'ROO\nMOV\n{cur_select[1]}{cur_select[0]}{coord[1]}{coord[0]}\n'
+                                    sendtext = f'ROO\nMOV\n{self.turn}\n{cur_select[1]}{cur_select[0]}{coord[1]}{coord[0]}\n'
                                     self.sock.sendall(sendtext)
                                     
 
