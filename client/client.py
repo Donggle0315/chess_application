@@ -544,9 +544,11 @@ class GameScreen():
                         self.disable_moveable()
                         # parse board_str
                         board_str = event.board_str.split()
+                        print(board_str)
                         for i in range(8):
                             for j in range(8):
-                                self.board[i][j] = int(board_str[i*8+j])
+                                s = board_str[(i*8+j)*2] + board_str[(i*8+j)*2]+1
+                                self.board[i][j] = int(s)
                             
                     
             self.manager.process_events(event)
