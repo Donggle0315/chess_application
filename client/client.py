@@ -541,7 +541,7 @@ class GameScreen():
                             self.board_gui[r][c].moveable = True
                     elif event.utype == GameEvent.ROOM_TURN_CHANGE:
                         self.turn = event.turn
-                        self.disable_moveable(self.board_gui)
+                        self.disable_moveable()
                         # parse board_str
                         board_str = event.board_str.split()
                         for i in range(8):
