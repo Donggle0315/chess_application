@@ -114,7 +114,9 @@ class NetworkPygame():
         elif msg[0] == 'ROO':
             if msg[1] == 'SEL':
                 turn = int(msg[2])
-                moveable = msg[3].split()
+                moveable = []
+                for i in range(0, len(msg[3]), 2):
+                    moveable.append(msg[3][i:i+2])
                 new_event = pygame.event.Event(self.GAME_EVENT, {'utype': GameEvent.ROOM_SELECT_REPLY,
                                                                   'turn': turn,
                                                                   'moveable': moveable })
