@@ -83,7 +83,7 @@ class NetworkPygame():
                 pygame.event.post(new_event)  
         elif msg[0] == 'FET':
             arr = []
-            for i in range(1, len(msg)):
+            for i in range(1, len(msg)-1):
                 room = msg[i].split('\\')
                 d = {}
                 d['room_id'] = room[0]
@@ -473,7 +473,8 @@ class GameScreen():
 
         # gui elements
         self.start_game_bt_rect = pygame.Rect(0, 0, 50, 50)
-        self.start_game_bt = pygame_gui.elements.UIButton(relative_rect=self.start_game_bt, 
+        self.start_game_bt_rect.bottomright = (-200, -50)
+        self.start_game_bt = pygame_gui.elements.UIButton(relative_rect=self.start_game_bt_rect, 
                                                           text='Start Game!',
                                                           manager=self.manager,
                                                           anchors={'right': 'right',
