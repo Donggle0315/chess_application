@@ -227,4 +227,11 @@ bool forCastling(chess_board*,int,int);
 */
 void enPassant(chess_board*, coordi*,int,int);
 
+/**
+ * implement : 움직일 수 있는 좌표가 들어있는 배열에 있는지 확인하는 함수
+ * input : 도착열, 도착행, 좌표가 들어간 배열, 배열의 크기
+ * output : 배열 안에 있으면 true, 없으면 false
+*/
+bool isInMoveablePosition(int,int,coordi*,int);
+
 #endif

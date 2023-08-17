@@ -73,7 +73,11 @@ void handle_MOV(room_option *room, send_info *si, char** arguments){
     int fc=arguments[2][3]-'0';
     int deathCode;
     bool flag=true;
-    if(canMove(room->b,sr,sc,fr,fc)){
+    //if(canMove(room->b,sr,sc,fr,fc)){
+    coordi movealbe_pos[ROW*COL];
+    int moveable_idx=0;
+    getMoveablePosition(room->b,sr,sc,movealbe_pos,&moveable_idx);
+    if(isInMoveablePosition(fr,fc,movealbe_pos,moveable_idx)){
         deathCode=movePiece(room->b,sr,sc,fr,fc,true);
         if(deathCode) addDeathPiece(room->b,deathCode);
         changeTurn(room->b);

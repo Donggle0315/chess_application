@@ -81,7 +81,7 @@ bool handlePawn(chess_board* b, int sr, int sc, int fr, int fc){
     }
 
     if(b->player_turn==BLACK){ //흑색 폰이 움직이는 경우
-        if(moveRow==-1 && abs(moveCol)==1 && getPieceColor(b->board[fr][fc])==WHITE) return true;//대각선 사냥
+        if(moveRow==1 && abs(moveCol)==1 && getPieceColor(b->board[fr][fc])==WHITE) return true;//대각선 사냥
         if(b->board[fr][fc] != BLANK) return false;//이미 말 있음
         if(sr==1 && moveCol==0 && moveRow==2 && b->board[sr+1][sc]==BLANK) return true;//처음 움직일 때 두칸 이동
         if(moveCol==0 && moveRow==1) return true;//한칸 앞으로 이동
@@ -203,7 +203,7 @@ bool canMove(chess_board* b, int sr, int sc, int fr, int fc){
 int movePiece(chess_board* b,int sr,int sc, int fr, int fc, bool option){
     int deathCode=BLANK;
     if(b->en_passant_flag){//앙파상인 경우
-        if((b->board[sr][sc]%10)==6 && abs(sc-fc)==1 && b->board[fr][fc]==0){
+        if((b->board[sr][sc]%10)==6 && abs(sc-fc)==1 && b->board[fr][fc]==BLANK){
             if(b->player_turn==BLACK){
                 b->board[b->last_move[2]+1][b->last_move[3]]=b->board[b->last_move[2]][b->last_move[3]];
                 b->board[b->last_move[2]][b->last_move[3]]=BLANK;
@@ -539,4 +539,12 @@ void enPassant(chess_board* b,coordi* tmp,int last_row,int last_col){
         }
     }
     b->en_passant_flag=false;
+}
+
+
+bool isInMoveablePosition(int fr,int fc,coordi *movealbe_pos,int moveable_idx){
+    for(int i=0;i<moveable_idx;i++){
+        if(movealbe_pos[i].row==fr && movealbe_pos[i].col==fc) return true;
+    }
+    return false;
 }
