@@ -21,6 +21,7 @@ class ChessSprite():
         self.moveable = False
 
     def draw(self, window, num):
+        self.surface.fill(self.color)
         if num in self.chess_sprites:
             self.surface.blit(self.chess_sprites[num], (0, 0, self.rect.width,self.rect.height))
         if self.moveable:
@@ -114,7 +115,9 @@ class NetworkPygame():
         elif msg[0] == 'ROO':
             if msg[1] == 'SEL':
                 turn = int(msg[2])
-                moveable = msg[3].split()
+                moveable = []
+                for i in range(0, len(msg[3]), 2):
+                    moveable.append(msg[3][i:i+2])
                 new_event = pygame.event.Event(self.GAME_EVENT, {'utype': GameEvent.ROOM_SELECT_REPLY,
                                                                   'turn': turn,
                                                                   'moveable': moveable })
@@ -518,35 +521,40 @@ class GameScreen():
                                 if self.board_gui[coord[1]][coord[0]].moveable == False:
                                     sendtext = f'ROO\n{self.room_id}\nSEL\n{self.turn}\n{coord[1]}{coord[0]}\n'
                                     self.sock.sendall(sendtext)
-                                    cur_select = [c, r]
+                                    self.cur_select = [coord[0], coord[1]]
 
                                 # when clicking on marker, move the piece
                                 else:
-                                    sendtext = f'ROO\nMOV\n{self.turn}\n{cur_select[1]}{cur_select[0]}{coord[1]}{coord[0]}\n'
+                                    sendtext = f'ROO\n{self.room_id}\nMOV\n{self.turn}\n{self.cur_select[1]}{self.cur_select[0]}{coord[1]}{coord[0]}\n'
+                                    print(sendtext)
                                     self.sock.sendall(sendtext)
                                     
 
             elif event.type == pygame_gui.UI_BUTTON_PRESSED:
                 if event.ui_element == self.start_game_bt:
-                    sendtext = f'ROO\nPLY\n'
+                    sendtext = f'ROO\n{self.room_id}\nPLY\n'
                     self.sock.sendall(sendtext)
 
             elif event.type == self.GAME_EVENT:
                 if hasattr(event, 'utype'):
                     if event.utype == GameEvent.ROOM_SELECT_REPLY and event.turn == self.turn:
-                        self.disable_moveable(self.board_gui)
+                        self.disable_moveable()
                         for m in event.moveable:
                             r = int(m[0])
                             c = int(m[1])
                             self.board_gui[r][c].moveable = True
+                            print(r, c, self.board_gui[r][c].moveable)
                     elif event.utype == GameEvent.ROOM_TURN_CHANGE:
                         self.turn = event.turn
-                        self.disable_moveable(self.board_gui)
+                        self.disable_moveable()
                         # parse board_str
-                        board_str = event.board_str.split()
+                        board_str = event.board_str
+                        print(board_str)
                         for i in range(8):
                             for j in range(8):
-                                self.board[i][j] = int(board_str[i*8+j])
+                                s = board_str[(i*8+j)*2] + board_str[(i*8+j)*2+1]
+                                print(s)
+                                self.board[i][j] = int(s)
                             
                     
             self.manager.process_events(event)
