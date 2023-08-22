@@ -96,7 +96,7 @@ typedef struct chess_board{
     int promotion_c;
     bool castling_check[6];
     bool castling_flag;
-    int last_move[5];
+    bool last_move[5];
     bool en_passant_flag;
 
     //게임 시간
