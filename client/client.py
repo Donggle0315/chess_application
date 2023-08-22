@@ -1,9 +1,10 @@
 import pygame
 import pygame_gui
 import socket
-from enum import Enum
+from pygame import Rect
+from enum import Enum, auto
 
-ADDR = '52.78.48.244:50797'
+ADDR = '127.0.0.1:12345'
 HOST, PORT = ADDR.split(':')
 PORT = int(PORT)
 MAXLEN = 2048
@@ -13,7 +14,7 @@ class ChessSprite():
     def __init__(self, color, x, y, width, height, chess_sprites, board_coord):
         super(ChessSprite, self).__init__()
         self.color = color
-        self.rect = pygame.Rect(x, y, width, height)
+        self.rect = Rect(x, y, width, height)
         self.chess_sprites = chess_sprites
         self.surface = pygame.Surface((width, height))
         self.surface.fill(self.color)
@@ -29,19 +30,20 @@ class ChessSprite():
         window.blit(self.surface, self.rect)
 
 class GameEvent(Enum):
-    NULL_EVENT = 0
-    LOGIN_SUCCESS = 1
-    LOGIN_FAIL = 2
-    FETCH_ROOM_INFO = 3
-    CREATE_ROOM_SUCCESS = 4
-    CREATE_ROOM_FAIL = 5
-    ENTER_ROOM_SUCCESS = 6
-    ENTER_ROOM_FAIL = 7
-    ROOM_SELECT_REPLY = 8
-    ROOM_MOVE_SUCCESS = 9
-    ROOM_MOVE_FAIL = 10
-    ROOM_TURN_CHANGE = 11
-
+    NULL_EVENT = auto()
+    LOGIN_SUCCESS = auto()
+    LOGIN_FAIL = auto()
+    REGISTER_SUCCESS = auto()
+    REGISTER_FAIL = auto()
+    FETCH_ROOM_INFO = auto()
+    CREATE_ROOM_SUCCESS = auto()
+    CREATE_ROOM_FAIL = auto()
+    ENTER_ROOM_SUCCESS = auto()
+    ENTER_ROOM_FAIL = auto()
+    ROOM_SELECT_REPLY = auto()
+    ROOM_MOVE_SUCCESS = auto()
+    ROOM_MOVE_FAIL = auto()
+    ROOM_TURN_CHANGE = auto()
 class NetworkPygame():
     def __init__(self, HOST, PORT, GAME_EVENT):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -50,6 +52,9 @@ class NetworkPygame():
         self.sock.setblocking(False)
         self.data = b''
         self.GAME_EVENT = GAME_EVENT
+
+    def __del__(self):
+        self.sock.close()
 
     # sends info to socket
     def sendall(self, data):
@@ -82,6 +87,13 @@ class NetworkPygame():
                 new_event = pygame.event.Event(self.GAME_EVENT, 
                                                {'utype': GameEvent.LOGIN_FAIL})
                 pygame.event.post(new_event)  
+        elif msg[0] == 'REG':
+            if msg[1] == 'SUC':
+                new_event = pygame.event.Event(self.GAME_EVENT, {'utype': GameEvent.REGISTER_SUCCESS})
+                pygame.event.post(new_event)
+            elif msg[1] == 'FAL':
+                new_event = pygame.event.Event(self.GAME_EVENT, {'utype': GameEvent.REGISTER_SUCCESS})
+                pygame.event.post(new_event)
         elif msg[0] == 'FET':
             arr = []
             for i in range(1, len(msg)-1):
@@ -144,16 +156,55 @@ class LoginScreen():
     def __init__(self, window: pygame.Surface, sock: NetworkPygame, clock: pygame.time.Clock, GAME_EVENT):
         # login screen
         self.manager = pygame_gui.UIManager((1280, 720))
-        self.login_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect(200, 0, 200, 120), 
+        self.login_button = pygame_gui.elements.UIButton(relative_rect=Rect(200, 0, 200, 120), 
                                                     text='login', manager=self.manager,
                                                     anchors={'center': 'center'})
-        self.id_text_box = pygame_gui.elements.UITextEntryLine(relative_rect=pygame.Rect(-50, -30, 200, 50), manager=self.manager,
+        self.id_text_box = pygame_gui.elements.UITextEntryLine(relative_rect=Rect(-50, -30, 200, 50), manager=self.manager,
                                                         anchors={'center': 'center'})
-        self.pw_text_box = pygame_gui.elements.UITextEntryLine(relative_rect=pygame.Rect(-50, 30, 200, 50), manager=self.manager,
+        self.pw_text_box = pygame_gui.elements.UITextEntryLine(relative_rect=Rect(-50, 30, 200, 50), manager=self.manager,
                                                         anchors={'center': 'center'})
+        self.alert_label = pygame_gui.elements.UILabel(text='', relative_rect=Rect(-50, 80, 200, 50), manager=self.manager,
+                                                        anchors={'center': 'center'})
+        self.reg_bt = pygame_gui.elements.UIButton(relative_rect=Rect(200, 100, 100, 40),
+                                                   text='register', manager=self.manager,
+                                                   anchors={'center': 'center'})
         self.background = pygame.Surface((1280, 720))
         self.background.fill('#FFFFFF')
 
+
+
+        self.register_window = pygame_gui.elements.UIWindow(rect=Rect(300, 100, 700, 500), 
+                                                        window_display_title='Register',
+                                                        manager=self.manager)
+
+        self.register_window.on_close_window_button_pressed = self.register_window.hide
+        self.register_window.hide()
+        self.register_id_label = pygame_gui.elements.UILabel(text='ID: ', relative_rect=Rect(50, 50, 150, 50),
+                                                        manager=self.manager, container=self.register_window)
+        self.register_id_text = pygame_gui.elements.UITextEntryLine(relative_rect=Rect(200, 50, 400, 50), manager=self.manager,
+                                                                container=self.register_window)
+
+        self.register_pw_label = pygame_gui.elements.UILabel(text='PW: ', relative_rect=Rect(50, 120, 150, 50),
+                                                    manager=self.manager, container=self.register_window)
+
+        self.register_pw_text = pygame_gui.elements.UITextEntryLine(relative_rect=Rect(200, 120, 400, 50), manager=self.manager,
+                                                                container=self.register_window)
+
+        self.user_name_label = pygame_gui.elements.UILabel(text='Username: ', relative_rect=Rect(50, 190, 150, 50),
+                                                    manager=self.manager, container=self.register_window)
+
+        self.user_name_text = pygame_gui.elements.UITextEntryLine(relative_rect=Rect(200, 190, 400, 50), manager=self.manager,
+                                                                container=self.register_window)
+        self.reg_alert_label = pygame_gui.elements.UILabel(text='', relative_rect=Rect(200, 260, 400, 50), manager=self.manager,
+                                                           container=self.register_window)
+        self.final_reg_bt_rect = Rect(0, 0, 200, 50)
+        self.final_reg_bt_rect.bottomright = (-50, -50)
+        self.final_reg_bt = pygame_gui.elements.UIButton(relative_rect=self.final_reg_bt_rect,
+                                                            text='Register',
+                                                            manager=self.manager,
+                                                            container=self.register_window,
+                                                            anchors={'right': 'right',
+                                                                    'bottom': 'bottom'})
         # socket to connect to the main server
         self.sock = sock
         self.running = True
@@ -185,14 +236,29 @@ class LoginScreen():
                     pw_text = self.pw_text_box.get_text()
                     sendtext = f'LOG\n{id_text}\n{pw_text}\n'
                     self.sock.sendall(sendtext)
-                    
+                elif event.ui_element == self.final_reg_bt:
+                    id_text = self.register_id_text.get_text()
+                    pw_text = self.register_pw_text.get_text()
+                    username_text = self.user_name_text.get_text()
+                    sendtext = f'REG\n{id_text}\n{pw_text}\n{username_text}\n'
+                    self.sock.sendall(sendtext)
+                elif event.ui_element == self.reg_bt:
+                    print('regwindow')
+                    self.register_window.show()
             elif event.type == self.GAME_EVENT:
                 if hasattr(event, 'utype'):
                     if event.utype == GameEvent.LOGIN_SUCCESS:
                         self.running = False
                         self.next_window = 'lobby'
                         return
-
+                    elif event.utype == GameEvent.LOGIN_FAIL:
+                        self.alert_label.set_text("Login Failed")
+                    elif event.utype == GameEvent.REGISTER_SUCCESS:
+                        self.register_window.hide()
+                        self.alert_label.set_text('Register Success!')
+                    elif event.utype == GameEvent.REGISTER_FAIL:
+                        self.reg_alert_label.set_text("Register Fail")
+                    
             self.manager.process_events(event)
 
     def render(self):
@@ -204,7 +270,6 @@ class LoginScreen():
     def quit(self):
         # close the window, close the sockets, exit program
         pygame.quit()
-        self.sock.close()
         exit()
 
 
@@ -216,25 +281,25 @@ class LobbyScreen():
         self.background = pygame.Surface((1280, 720))
         self.background.fill('#EEEEEE')
 
-        self.lobby_refresh_bt_rect = pygame.Rect(0, 0, 50, 50)
+        self.lobby_refresh_bt_rect = Rect(0, 0, 50, 50)
         self.lobby_refresh_bt_rect.bottomright = (-100, -50)
         self.lobby_refresh_bt = pygame_gui.elements.UIButton(relative_rect=self.lobby_refresh_bt_rect,
                                                             text='refresh', manager=self.manager,
                                                             anchors={'right': 'right',
                                                                     'bottom': 'bottom'})
 
-        self.create_room_bt_rect = pygame.Rect(0, 0, 50, 50)
+        self.create_room_bt_rect = Rect(0, 0, 50, 50)
         self.create_room_bt_rect.bottomright = (-200, -50)
         self.create_room_bt = pygame_gui.elements.UIButton(relative_rect=self.create_room_bt_rect,
                                                             text='create room', manager=self.manager,
                                                             anchors={'right': 'right',
                                                                     'bottom': 'bottom'})
 
-        self.rooms_panel_display = pygame_gui.elements.UIPanel(pygame.Rect(30, 30, 900, 600),
+        self.rooms_panel_display = pygame_gui.elements.UIPanel(Rect(30, 30, 900, 600),
                                                 manager=self.manager)
 
 
-        self.create_room_window_rect = pygame.Rect(300, 100, 700, 500)
+        self.create_room_window_rect = Rect(300, 100, 700, 500)
 
         self.create_room_window_color = "#21282D"
         self.create_room_window = pygame_gui.elements.UIWindow(rect=self.create_room_window_rect, 
@@ -247,25 +312,25 @@ class LobbyScreen():
 
 
         # create room window
-        self.room_name_label = pygame_gui.elements.UILabel(text='Room Name', relative_rect=pygame.Rect(50, 50, 150, 50),
+        self.room_name_label = pygame_gui.elements.UILabel(text='Room Name', relative_rect=Rect(50, 50, 150, 50),
                                                         manager=self.manager, container=self.create_room_window)
-        self.room_name_text_box = pygame_gui.elements.UITextEntryLine(relative_rect=pygame.Rect(200, 50, 400, 50), manager=self.manager,
+        self.room_name_text_box = pygame_gui.elements.UITextEntryLine(relative_rect=Rect(200, 50, 400, 50), manager=self.manager,
                                                                 container=self.create_room_window)
 
-        self.max_user_label = pygame_gui.elements.UILabel(text='Max User', relative_rect=pygame.Rect(50, 120, 150, 50),
+        self.max_user_label = pygame_gui.elements.UILabel(text='Max User', relative_rect=Rect(50, 120, 150, 50),
                                                     manager=self.manager, container=self.create_room_window)
         self.max_user_menu = pygame_gui.elements.UIDropDownMenu(options_list=['2', '3', '4'],
                                                             starting_option='2',
-                                                            relative_rect=pygame.Rect(200, 120, 100, 50),
+                                                            relative_rect=Rect(200, 120, 100, 50),
                                                             manager=self.manager, container=self.create_room_window)
 
-        self.time_label = pygame_gui.elements.UILabel(text='Time (min)', relative_rect=pygame.Rect(50, 190, 150, 50),
+        self.time_label = pygame_gui.elements.UILabel(text='Time (min)', relative_rect=Rect(50, 190, 150, 50),
                                                 manager=self.manager, container=self.create_room_window)
         self.time_menu = pygame_gui.elements.UIDropDownMenu(options_list=['10', '20', '30'],
                                                             starting_option='10',
-                                                            relative_rect=pygame.Rect(200, 190, 100, 50),
+                                                            relative_rect=Rect(200, 190, 100, 50),
                                                             manager=self.manager, container=self.create_room_window)
-        self.final_create_room_bt_rect = pygame.Rect(0, 0, 200, 50)
+        self.final_create_room_bt_rect = Rect(0, 0, 200, 50)
         self.final_create_room_bt_rect.bottomright = (-50, -50)
         self.final_create_room_bt = pygame_gui.elements.UIButton(relative_rect=self.final_create_room_bt_rect,
                                                             text='Create Room!',
@@ -329,7 +394,7 @@ class LobbyScreen():
                     self.creating_room = True
                     # disable all gui later
 
-                for i, (p, b, room) in enumerate(self.rooms_panel):
+                for i, (_, b, _) in enumerate(self.rooms_panel):
                     if event.ui_element == b:
                         cur_idx, _ = self.get_room_range()
                         cur_idx += i
@@ -371,16 +436,16 @@ class LobbyScreen():
 
     def make_rooms_panel(self):
         self.rooms_panel = []
-        for room in range(self.room_display_count):
+        for _ in range(self.room_display_count):
             
-            new_panel = pygame_gui.elements.UIPanel(relative_rect=pygame.Rect(0, 0, 300, 200),
+            new_panel = pygame_gui.elements.UIPanel(relative_rect=Rect(0, 0, 300, 200),
                                                     manager=self.manager,
                                                     container=self.rooms_panel_display)
-            new_bt = pygame_gui.elements.UIButton(relative_rect=pygame.Rect(0, 150, 300, 50),
+            new_bt = pygame_gui.elements.UIButton(relative_rect=Rect(0, 150, 300, 50),
                                                 text='enter', manager=self.manager,
                                                 container=new_panel)
             text_box = pygame_gui.elements.UITextBox(html_text='',
-                                        relative_rect=pygame.Rect(0, 0, 300, 150),
+                                        relative_rect=Rect(0, 0, 300, 150),
                                         manager=self.manager,
                                         container=new_panel)
             new_panel.hide()
@@ -397,7 +462,7 @@ class LobbyScreen():
             positions.append((xpos, ypos))
             xpos = (xpos + 400) % 800
             if i % 2 == 1:
-                ypos += 200
+                ypos += 210
 
         for p, _, _ in self.rooms_panel:
             p.hide()
@@ -432,6 +497,24 @@ class LobbyScreen():
         pygame.quit()
         exit()
 
+class PlayerInfoPanel():
+    def __init__(self, manager):
+        self.manager = manager
+        self.panel = pygame_gui.elements.UIPanel(relative_rect=Rect(0, 0, 300, 350),
+                                                 manager=self.manager)
+        self.username = pygame_gui.elements.UILabel(text='???',
+                                                    relative_rect=Rect(10, 10, 200, 50),
+                                                    manager=self.manager,
+                                                    container=self.panel)
+
+    def set_position(self, left, top):
+        self.panel.set_relative_position((left, top))
+
+    def set_username(self, username):
+        self.username.set_text(username)
+
+                                                    
+        
 class GameScreen():
     def __init__(self, window: pygame.Surface, sock: NetworkPygame, clock: pygame.time.Clock, room_id, GAME_EVENT):
         # room
@@ -456,7 +539,7 @@ class GameScreen():
         self.chess_sprites[99] = pygame.image.load('./img/checker.png')
 
         self.size = 60
-        self.start_x = 60
+        self.start_x = 400
         self.start_y = 60
 
         for k in self.chess_sprites:
@@ -474,14 +557,30 @@ class GameScreen():
             self.board.append(row)
             self.board_gui.append(row_gui)
 
-        # gui elements
-        self.start_game_bt_rect = pygame.Rect(0, 0, 50, 50)
-        self.start_game_bt_rect.bottomright = (-200, -50)
+        # gui elements 
+        self.start_game_bt_rect = Rect(500, 600, 200, 50)
+        
         self.start_game_bt = pygame_gui.elements.UIButton(relative_rect=self.start_game_bt_rect, 
                                                           text='Start Game!',
-                                                          manager=self.manager,
-                                                          anchors={'right': 'right',
-                                                                   'bottom': 'bottom'})
+                                                          manager=self.manager)
+
+        self.p1_time_rect = Rect(0, 0, 200, 100)
+        self.p2_time_rect = Rect(0, 0, 200, 100)
+        self.p1_time_rect.topleft = (50, 100)
+        self.p2_time_rect.topright = (1230, 100)
+
+        self.p1_time_indicator = pygame_gui.elements.UILabel(text='99:99',
+                                                             relative_rect=self.p1_time_rect,
+                                                             manager=self.manager)
+        self.p2_time_indicator = pygame_gui.elements.UILabel(text='99:99',
+                                                             relative_rect=self.p2_time_rect,
+                                                             manager=self.manager)
+        self.p1_info = PlayerInfoPanel(self.manager)
+        self.p2_info = PlayerInfoPanel(self.manager)
+
+        self.p1_info.set_position(20, 350)
+        self.p2_info.set_position(960, 350)
+
 
         self.board[0][0] = 25
 
@@ -502,6 +601,7 @@ class GameScreen():
             self.handle_events()
             self.manager.update(delta)
             self.render()
+        return
 
     def handle_events(self):
         for event in pygame.event.get():
@@ -578,7 +678,6 @@ class GameScreen():
     def quit(self):
         # close the window, close the sockets, exit program
         pygame.quit()
-        self.sock.close()
         exit()
 
 

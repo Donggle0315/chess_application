@@ -84,7 +84,7 @@ void parseline(char *buf, char **arguments){
     int len = strlen(buf);
     buf[len-1] = '\n';
 
-    while(delim = strchr(buf, '\n')){
+    while((delim = strchr(buf, '\n'))){
         arguments[argc++] = buf;
         *delim = '\0';
         buf = delim+1; // search next part
@@ -110,13 +110,23 @@ int handle_client(pool_client *pc, pool_room *pr, MYSQL *mysql, char buf[], int 
             strcpy(si->send_string, "LOG\nSUC\n");
         }
         else{
+            si->send_fds[(si->size)++] = clientfd;
             strcpy(si->send_string, "LOG\nFAL\n");
             printf("failed login!\n");
         }
     }
     else if(!strcmp(buf, "REG")){
         // arguments 0 = id, 1 = pw
-        user_register(mysql, arguments);
+        bool success = user_register(mysql, arguments);
+        if(success){
+            printf("register success\n");
+            si->send_fds[(si->size)++] = clientfd;
+            strcpy(si->send_string, "REG\nSUC\n");
+        }
+        else{
+            strcpy(si->send_string, "REG\nFAL\n");
+            printf("failed login!\n");
+        }
     }
     else if(!strcmp(buf, "FET")){
         fetch_information(pr, si);
@@ -184,10 +194,11 @@ int user_login(MYSQL *mysql, pool_client *pc, char  **arguments, int client){
 int user_register(MYSQL *mysql, char **arguments){
     MYSQL_RES *res;
     char buf[256];
-    sprintf(buf, "insert into user_login_info(id, pw, username) values (%s, %s, %s)",arguments[1], arguments[2], arguments[3]);
+    sprintf(buf, "insert into user_login_info(id, pw, username) values ('%s', '%s', '%s')",arguments[1], arguments[2], arguments[3]);
 
     if(mysql_query(mysql, buf) != 0){
         fprintf(stderr, "error has occured on mysql_query in register\n");
+        fprintf(stderr, "%s\n", mysql_error(mysql));
         return false;
     }
     return true;
