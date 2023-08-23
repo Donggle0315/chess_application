@@ -4,7 +4,7 @@ import socket
 from pygame import Rect
 from enum import Enum, auto
 
-ADDR = '52.78.117.250:53938'
+ADDR = '3.34.182.4:59696'
 HOST, PORT = ADDR.split(':')
 PORT = int(PORT)
 MAXLEN = 2048
@@ -44,6 +44,10 @@ class GameEvent(Enum):
     ROOM_MOVE_SUCCESS = auto()
     ROOM_MOVE_FAIL = auto()
     ROOM_TURN_CHANGE = auto()
+    ROOM_PLAYER_INFO = auto()
+    ROOM_GAME_FINISHED = auto()
+    ROOM_GAME_TIME_CONTINUE = auto()
+    
 class NetworkPygame():
     def __init__(self, HOST, PORT, GAME_EVENT):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -145,12 +149,33 @@ class NetworkPygame():
             elif msg[1] == 'TUR':
                 turn = int(msg[2])
                 board_str = msg[3]
+
                 new_event = pygame.event.Event(self.GAME_EVENT, {'utype': GameEvent.ROOM_TURN_CHANGE,
                                                                  'turn': turn,
                                                                  'board_str': board_str })
                 pygame.event.post(new_event)
 
+            elif msg[1] == 'INF':
+                client_id = int(msg[2])
+                p1_username = msg[3]
+                p2_username = msg[4]
+                new_event = pygame.event.Event(self.GAME_EVENT, {'utype': GameEvent.ROOM_PLAYER_INFO,
+                                                                 'client_id': client_id,
+                                                                 'p1_username': p1_username,
+                                                                 'p2_username': p2_username})
+                pygame.event.post(new_event)
+            elif msg[1] == 'FIN':
+                new_event = pygame.event.Event(self.GAME_EVENT, {'utype': GameEvent.ROOM_GAME_FINISHED,
+                                                                 'win_player': msg[2]})
+                pygame.event.post(new_event)
 
+            elif msg[1] == 'RES':
+                p1_time = int(msg[2])
+                p2_time = int(msg[3])
+                new_event = pygame.event.Event(self.GAME_EVENT, {'utype': GameEvent.ROOM_GAME_TIME_CONTINUE,
+                                                                 'p1_time': p1_time,
+                                                                 'p2_time': p2_time })
+                pygame.event.post(new_event)
 
 class LoginScreen():
     def __init__(self, window: pygame.Surface, sock: NetworkPygame, clock: pygame.time.Clock, GAME_EVENT):
@@ -168,8 +193,7 @@ class LoginScreen():
         self.reg_bt = pygame_gui.elements.UIButton(relative_rect=Rect(200, 100, 100, 40),
                                                    text='register', manager=self.manager,
                                                    anchors={'center': 'center'})
-        self.background = pygame.Surface((1280, 720))
-        self.background.fill('#FFFFFF')
+        self.background = pygame.image.load('./img/chess logo.png')
 
 
 
@@ -295,9 +319,9 @@ class LobbyScreen():
                                                             anchors={'right': 'right',
                                                                     'bottom': 'bottom'})
 
-        self.rooms_panel_display = pygame_gui.elements.UIPanel(Rect(30, 30, 900, 600),
+        self.rooms_panel_display = pygame_gui.elements.UIPanel(Rect(30, 30, 900, 650),
                                                 manager=self.manager)
-
+        self.rooms_panel_display.layer = 1
 
         self.create_room_window_rect = Rect(300, 100, 700, 500)
 
@@ -308,7 +332,7 @@ class LobbyScreen():
 
         self.create_room_window.on_close_window_button_pressed = self.create_room_window.hide
         self.create_room_window.hide()
-
+        self.create_room_window.layer = 100
 
 
         # create room window
@@ -339,6 +363,21 @@ class LobbyScreen():
                                                             anchors={'right': 'right',
                                                                     'bottom': 'bottom'})
         
+        self.next_page_bt_rect = Rect(0, 0, 200, 50)
+        self.next_page_bt_rect.topright = (-50, 120)
+        self.prev_page_bt_rect = Rect(0, 0, 200, 50)
+        self.prev_page_bt_rect.topright = (-50, 50)
+
+        self.next_page_bt = pygame_gui.elements.UIButton(relative_rect=self.next_page_bt_rect,
+                                                         text='next page',
+                                                         manager=self.manager,
+                                                         anchors={'right': 'right',
+                                                                  'top': 'top'})
+        self.prev_page_bt = pygame_gui.elements.UIButton(relative_rect=self.prev_page_bt_rect,
+                                                         text='prev page',
+                                                         manager=self.manager ,
+                                                         anchors={'right': 'right',
+                                                                  'top': 'top'})
         self.clock = clock
         self.window = window
         self.page = 0
@@ -378,11 +417,11 @@ class LobbyScreen():
                     print('refresh')
                     self.fetch_room()
 
-                if event.ui_element == self.create_room_bt:
+                elif event.ui_element == self.create_room_bt:
                     print('create room')
                     self.create_room_window.show()
 
-                if event.ui_element == self.final_create_room_bt:
+                elif event.ui_element == self.final_create_room_bt:
                     print('create room final')
                     rname = self.room_name_text_box.text
                     rmax_user = self.max_user_menu.selected_option
@@ -393,6 +432,14 @@ class LobbyScreen():
                     
                     self.creating_room = True
                     # disable all gui later
+                elif event.ui_element == self.prev_page_bt:
+                    self.page -= 1
+                    if self.page < 0:
+                        self.page = 0
+                    self.display_rooms_panel()
+                elif event.ui_element == self.next_page_bt:
+                    self.page += 1
+                    self.display_rooms_panel()
 
                 for i, (_, b, _) in enumerate(self.rooms_panel):
                     if event.ui_element == b:
@@ -575,11 +622,29 @@ class GameScreen():
         self.p2_time_indicator = pygame_gui.elements.UILabel(text='99:99',
                                                              relative_rect=self.p2_time_rect,
                                                              manager=self.manager)
+
+        self.p1_time = 100.0
+        self.p2_time = 100.0
+
         self.p1_info = PlayerInfoPanel(self.manager)
         self.p2_info = PlayerInfoPanel(self.manager)
 
         self.p1_info.set_position(20, 350)
         self.p2_info.set_position(960, 350)
+
+        self.finish_window = pygame_gui.elements.UIWindow(rect=Rect(200, 50, 800, 600),
+                                                          manager=self.manager)
+        self.finish_window.hide()
+        self.finish_window.layer = 100
+        self.finish_window.enable_close_button = False
+        self.finish_label = pygame_gui.elements.UILabel(relative_rect=Rect(30, 30, 500, 100),
+                                                        text='asd',
+                                                        manager=self.manager,
+                                                        container=self.finish_window)
+        self.return_to_lobby_bt = pygame_gui.elements.UIButton(relative_rect=Rect(20, 300, 300, 100),
+                                                               text='return to lobby',
+                                                               manager=self.manager,
+                                                               container=self.finish_window)
 
 
         self.board[0][0] = 25
@@ -596,15 +661,29 @@ class GameScreen():
 
         # ROO\nINF\n
         self.get_player_info()
+        self.running = True
+        self.gaming = False
 
     def run(self):
-        while True:
+        while self.running:
             delta = self.clock.tick(120)/1000
+            if self.gaming:
+                if self.turn%2 == 1:
+                    self.p1_time -= delta
+                    if self.p1_time < 0:
+                        self.check_game_end()
+                else:
+                    self.p2_time -= delta
+                    if self.p2_time < 0:
+                        self.check_game_end()
+
+                self.update_time()
+
             self.sock.process_network()
             self.handle_events()
             self.manager.update(delta)
             self.render()
-        return
+        return 'lobby', -1
 
     def handle_events(self):
         for event in pygame.event.get():
@@ -614,29 +693,33 @@ class GameScreen():
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 pos = pygame.mouse.get_pos()
                 if pos[0] > self.start_x and pos[0] < self.start_x+self.size*8 and pos[1] > self.start_y and pos[1] < self.start_y+self.size*8:
-                    # TODO: if turn
-                    for i in self.board_gui:
-                        for j in i:
-                            if j.rect.collidepoint(pos):
-                                print(j.board_coord)
-                                coord = j.board_coord
-                                # when clicked on location where is not movable (no marker)
-                                if self.board_gui[coord[1]][coord[0]].moveable == False:
-                                    sendtext = f'ROO\n{self.room_id}\nSEL\n{self.turn}\n{coord[1]}{coord[0]}\n'
-                                    self.sock.sendall(sendtext)
-                                    self.cur_select = [coord[0], coord[1]]
+                    print(self.client_id, self.turn, self.turn%2)
+                    if self.client_id == self.turn%2:
+                        # TODO: if turn
+                        for i in self.board_gui:
+                            for j in i:
+                                if j.rect.collidepoint(pos):
+                                    print(j.board_coord)
+                                    coord = j.board_coord
+                                    # when clicked on location where is not movable (no marker)
+                                    if self.board_gui[coord[1]][coord[0]].moveable == False:
+                                        sendtext = f'ROO\n{self.room_id}\nSEL\n{self.turn}\n{coord[1]}{coord[0]}\n'
+                                        self.sock.sendall(sendtext)
+                                        self.cur_select = [coord[0], coord[1]]
 
-                                # when clicking on marker, move the piece
-                                else:
-                                    sendtext = f'ROO\n{self.room_id}\nMOV\n{self.turn}\n{self.cur_select[1]}{self.cur_select[0]}{coord[1]}{coord[0]}\n'
-                                    print(sendtext)
-                                    self.sock.sendall(sendtext)
+                                    # when clicking on marker, move the piece
+                                    else:
+                                        sendtext = f'ROO\n{self.room_id}\nMOV\n{self.turn}\n{self.cur_select[1]}{self.cur_select[0]}{coord[1]}{coord[0]}\n'
+                                        print(sendtext)
+                                        self.sock.sendall(sendtext)
                                     
 
             elif event.type == pygame_gui.UI_BUTTON_PRESSED:
                 if event.ui_element == self.start_game_bt:
                     sendtext = f'ROO\n{self.room_id}\nPLY\n'
                     self.sock.sendall(sendtext)
+                elif event.ui_element == self.return_to_lobby_bt:
+                    self.running = False
 
             elif event.type == self.GAME_EVENT:
                 if hasattr(event, 'utype'):
@@ -648,6 +731,7 @@ class GameScreen():
                             self.board_gui[r][c].moveable = True
                             print(r, c, self.board_gui[r][c].moveable)
                     elif event.utype == GameEvent.ROOM_TURN_CHANGE:
+                        self.gaming = True
                         self.turn = event.turn
                         self.disable_moveable()
                         # parse board_str
@@ -658,8 +742,20 @@ class GameScreen():
                                 s = board_str[(i*8+j)*2] + board_str[(i*8+j)*2+1]
                                 print(s)
                                 self.board[i][j] = int(s)
-                            
-                    
+                    elif event.utype == GameEvent.ROOM_PLAYER_INFO:
+                        self.client_id = event.client_id
+                        self.p1_info.username.set_text(event.p1_username)
+                        self.p2_info.username.set_text(event.p2_username)
+                    elif event.utype == GameEvent.ROOM_GAME_TIME_CONTINUE:
+                        self.p1_time = float(event.p1_time)
+                        self.p2_time = float(event.p2_time)
+                        self.update_time()
+                    elif event.utype == GameEvent.ROOM_GAME_FINISHED:
+                        self.finish_label.set_text(f'{event.win_player} has won the game!')
+                        self.finish_window.show()
+
+                        self.gaming = False
+
             self.manager.process_events(event)
 
     def render(self):   
@@ -667,6 +763,13 @@ class GameScreen():
         self.display_board()
         self.manager.draw_ui(self.window)
         pygame.display.flip()
+
+    def update_time(self):
+        self.p1_time_indicator.set_text(f'{int(self.p1_time)//60:02d}:{int(self.p1_time)%60:02d}')
+        self.p2_time_indicator.set_text(f'{int(self.p2_time)//60:02d}:{int(self.p2_time)%60:02d}')
+
+    def check_game_end(self):
+        self.sock.sendall(f'ROO\n{self.room_id}\nCHK\n')
 
     def display_board(self):
         for i in range(len(self.board)):
@@ -678,7 +781,7 @@ class GameScreen():
             for j in i:
                 j.moveable = False
     
-    def get_info(self):
+    def get_player_info(self):
         self.sock.sendall(f"ROO\n{self.room_id}\nINF\n")
 
     def quit(self):
@@ -698,7 +801,6 @@ def start_game():
     network = NetworkPygame(HOST, PORT, GAME_EVENT)
 
     login_screen = LoginScreen(window, network, clock, GAME_EVENT)
-    lobby_screen = LobbyScreen(window, network, clock, GAME_EVENT)
 
     
 
@@ -708,10 +810,12 @@ def start_game():
         if window_state == 'login':
             window_state, _ = login_screen.run()
         elif window_state == 'lobby':
+            lobby_screen = LobbyScreen(window, network, clock, GAME_EVENT)
             window_state, info = lobby_screen.run()
         elif window_state == 'game':
             game_screen = GameScreen(window, network, clock, info, GAME_EVENT)
-            window_state, info = game_screen.run()
+            window_state, _ = game_screen.run()
+            print(window_state)
 
 
 
