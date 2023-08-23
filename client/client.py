@@ -308,6 +308,7 @@ class LobbyScreen():
 
         self.create_room_window.on_close_window_button_pressed = self.create_room_window.hide
         self.create_room_window.hide()
+        self.create_room_window.change_layer(20)
 
 
 
