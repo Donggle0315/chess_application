@@ -165,7 +165,7 @@ int handle_client(pool_client *pc, pool_room *pr, MYSQL *mysql, char buf[], int 
 int user_login(MYSQL *mysql, pool_client *pc, char  **arguments, int client){
     MYSQL_RES *res;
     char buf[256];
-    sprintf(buf, "select id from user_login_info where id='%s'", arguments[1]);
+    sprintf(buf, "select * from user_login_info where id='%s'", arguments[1]);
 
     if(mysql_query(mysql, buf) != 0){
         fprintf(stderr, "%s\n", mysql_error(mysql));
@@ -185,7 +185,7 @@ int user_login(MYSQL *mysql, pool_client *pc, char  **arguments, int client){
     }
     if(strlen(row[1]) == strlen(arguments[2]) && !strcmp(row[1], arguments[2])){
         pc->has_login[client] = true;
-        strncpy(pc->client_info[client].user_id, row[0], 20);
+        strncpy(pc->client_info[client].user_id, row[2], 20);
         return true;
     }
     
