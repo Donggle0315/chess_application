@@ -44,6 +44,7 @@ class GameEvent(Enum):
     ROOM_MOVE_SUCCESS = auto()
     ROOM_MOVE_FAIL = auto()
     ROOM_TURN_CHANGE = auto()
+    ROOM_PLAYER_INFO = auto()
 class NetworkPygame():
     def __init__(self, HOST, PORT, GAME_EVENT):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -150,7 +151,16 @@ class NetworkPygame():
                                                                  'board_str': board_str })
                 pygame.event.post(new_event)
 
-
+            elif msg[1] == 'INF':
+                client_id = int(msg[2])
+                p1_username = msg[3]
+                p2_username = msg[4]
+                new_event = pygame.event.Event(self.GAME_EVENT, {'utype': GameEvent.ROOM_PLAYER_INFO,
+                                                                 'client_id': client_id,
+                                                                 'p1_username': p1_username,
+                                                                 'p2_username': p2_username})
+                pygame.event.post(new_event)
+                
 
 class LoginScreen():
     def __init__(self, window: pygame.Surface, sock: NetworkPygame, clock: pygame.time.Clock, GAME_EVENT):
@@ -658,7 +668,10 @@ class GameScreen():
                                 s = board_str[(i*8+j)*2] + board_str[(i*8+j)*2+1]
                                 print(s)
                                 self.board[i][j] = int(s)
-                            
+                    elif event.utype == GameEvent.ROOM_PLAYER_INFO:
+                        self.client_id = event.client_id
+                        self.p1_info.username.set_text(event.p1_username)
+                        self.p2_info.username.set_text(event.p2_username)
                     
             self.manager.process_events(event)
 
@@ -678,7 +691,7 @@ class GameScreen():
             for j in i:
                 j.moveable = False
     
-    def get_info(self):
+    def get_player_info(self):
         self.sock.sendall(f"ROO\n{self.room_id}\nINF\n")
 
     def quit(self):
