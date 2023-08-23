@@ -45,6 +45,8 @@ class GameEvent(Enum):
     ROOM_MOVE_FAIL = auto()
     ROOM_TURN_CHANGE = auto()
     ROOM_PLAYER_INFO = auto()
+    ROOM_GAME_FINISHED = auto()
+    
 class NetworkPygame():
     def __init__(self, HOST, PORT, GAME_EVENT):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -165,7 +167,8 @@ class NetworkPygame():
                                                                  'p1_username': p1_username,
                                                                  'p2_username': p2_username})
                 pygame.event.post(new_event)
-                
+            elif msg[1] == 'FIN':
+                new_event = pygame.event.Event(self.GAME_EVENT, {'utype': GameEvent.ROOM_GAME_FINISHED})
 
 class LoginScreen():
     def __init__(self, window: pygame.Surface, sock: NetworkPygame, clock: pygame.time.Clock, GAME_EVENT):
@@ -310,7 +313,7 @@ class LobbyScreen():
                                                             anchors={'right': 'right',
                                                                     'bottom': 'bottom'})
 
-        self.rooms_panel_display = pygame_gui.elements.UIPanel(Rect(30, 30, 900, 600),
+        self.rooms_panel_display = pygame_gui.elements.UIPanel(Rect(30, 30, 900, 650),
                                                 manager=self.manager)
 
 
@@ -323,7 +326,7 @@ class LobbyScreen():
 
         self.create_room_window.on_close_window_button_pressed = self.create_room_window.hide
         self.create_room_window.hide()
-
+        self.create_room_window.layer = 100
 
 
         # create room window
@@ -354,6 +357,21 @@ class LobbyScreen():
                                                             anchors={'right': 'right',
                                                                     'bottom': 'bottom'})
         
+        self.next_page_bt_rect = Rect(0, 0, 200, 50)
+        self.next_page_bt_rect.topright = (-50, 120)
+        self.prev_page_bt_rect = Rect(0, 0, 200, 50)
+        self.prev_page_bt_rect.topright = (-50, 50)
+
+        self.next_page_bt = pygame_gui.elements.UIButton(relative_rect=self.next_page_bt_rect,
+                                                         text='next page',
+                                                         manager=self.manager,
+                                                         anchors={'right': 'right',
+                                                                  'top': 'top'})
+        self.prev_page_bt = pygame_gui.elements.UIButton(relative_rect=self.prev_page_bt_rect,
+                                                         text='prev page',
+                                                         manager=self.manager ,
+                                                         anchors={'right': 'right',
+                                                                  'top': 'top'})
         self.clock = clock
         self.window = window
         self.page = 0
@@ -393,11 +411,11 @@ class LobbyScreen():
                     print('refresh')
                     self.fetch_room()
 
-                if event.ui_element == self.create_room_bt:
+                elif event.ui_element == self.create_room_bt:
                     print('create room')
                     self.create_room_window.show()
 
-                if event.ui_element == self.final_create_room_bt:
+                elif event.ui_element == self.final_create_room_bt:
                     print('create room final')
                     rname = self.room_name_text_box.text
                     rmax_user = self.max_user_menu.selected_option
@@ -408,6 +426,14 @@ class LobbyScreen():
                     
                     self.creating_room = True
                     # disable all gui later
+                elif event.ui_element == self.prev_page_bt:
+                    self.page -= 1
+                    if self.page < 0:
+                        self.page = 0
+                    self.display_rooms_panel()
+                elif event.ui_element == self.next_page_bt:
+                    self.page += 1
+                    self.display_rooms_panel()
 
                 for i, (_, b, _) in enumerate(self.rooms_panel):
                     if event.ui_element == b:
@@ -591,8 +617,8 @@ class GameScreen():
                                                              relative_rect=self.p2_time_rect,
                                                              manager=self.manager)
 
-        self.p1_time = 100
-        self.p2_time = 100
+        self.p1_time = 100.0
+        self.p2_time = 100.0
 
         self.p1_info = PlayerInfoPanel(self.manager)
         self.p2_info = PlayerInfoPanel(self.manager)
@@ -619,10 +645,16 @@ class GameScreen():
     def run(self):
         while True:
             delta = self.clock.tick(120)/1000
-            if self.turn%2 == 0:
+            if self.turn%2 == 1:
                 self.p1_time -= delta
+                if self.p1_time < 0:
+                    self.check_game_end()
             else:
                 self.p2_time -= delta
+                if self.p2_time < 0:
+                    self.check_game_end()
+
+            self.update_time()
 
             self.sock.process_network()
             self.handle_events()
@@ -676,8 +708,8 @@ class GameScreen():
                     elif event.utype == GameEvent.ROOM_TURN_CHANGE:
                         self.turn = event.turn
                         self.disable_moveable()
-                        self.p1_time = event.p1_time
-                        self.p2_time = event.p2_time
+                        self.p1_time = float(event.p1_time)
+                        self.p2_time = float(event.p2_time)
                         self.update_time()
                         # parse board_str
                         board_str = event.board_str
@@ -691,6 +723,8 @@ class GameScreen():
                         self.client_id = event.client_id
                         self.p1_info.username.set_text(event.p1_username)
                         self.p2_info.username.set_text(event.p2_username)
+                    elif event.utype == GameEvent.ROOM_GAME_FINISHED:
+                        print("someone won")
                     
             self.manager.process_events(event)
 
@@ -703,6 +737,9 @@ class GameScreen():
     def update_time(self):
         self.p1_time_indicator.set_text(f'{int(self.p1_time)//60:02d}:{int(self.p1_time)%60:02d}')
         self.p2_time_indicator.set_text(f'{int(self.p2_time)//60:02d}:{int(self.p2_time)%60:02d}')
+
+    def check_game_end(self):
+        self.sock.sendall(f'ROO\n{self.room_id}\nCHK\n')
 
     def display_board(self):
         for i in range(len(self.board)):
