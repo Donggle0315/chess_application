@@ -701,8 +701,8 @@ class GameScreen():
         pygame.display.flip()
 
     def update_time(self):
-        self.p1_time_indicator.set_text(f'{int(self.p1_time)//60}{int(self.p1_time)%60}')
-        self.p2_time_indicator.set_text(f'{int(self.p2_time)//60}{int(self.p2_time)%60}')
+        self.p1_time_indicator.set_text(f'{int(self.p1_time)//60:02d}:{int(self.p1_time)%60:02d}')
+        self.p2_time_indicator.set_text(f'{int(self.p2_time)//60:02d}:{int(self.p2_time)%60:02d}')
 
     def display_board(self):
         for i in range(len(self.board)):
