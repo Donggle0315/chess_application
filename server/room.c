@@ -3,7 +3,8 @@
 int room_main(pool_room* pr, char **arguments, int clientfd, send_info *si){
     int room_id = atoi(arguments[1]);
     arguments = &arguments[2];
-
+	
+	printf("error?11\n");
     room_option *room = &pr->room[room_id];
     // PLY: init game, send (board info, turn)
     if(!strcmp(arguments[0], "PLY")){
@@ -31,11 +32,17 @@ int room_main(pool_room* pr, char **arguments, int clientfd, send_info *si){
 
 void start_game(room_option *room, send_info *si){
     room->gi = init_room();
+	
+	printf("error?2\n");
     room->b = initBoard();
     
+	printf("error?3\n");
+	
     si->send_fds[(si->size)++] = room->player_fd[0];
     si->send_fds[(si->size)++] = room->player_fd[1];
-
+	
+	printf("error?\n");
+	
     sendInfoToClient(room, si);
 }
 
@@ -63,6 +70,7 @@ void handle_MOV(room_option *room, send_info *si, char** arguments){
     //check if right player_turn
     int turn = atoi(arguments[1]);
     if(room->gi->turn != turn) {
+		printf("in if\n");
         sendIsMoveToClient(room,si,false,false);
         return;
     }
@@ -86,7 +94,8 @@ void handle_MOV(room_option *room, send_info *si, char** arguments){
     else{
         flag=false;
     }
-    //check if the game finish
+  
+	//check if the game finish
     bool finish = isFinish(room->b);
     //send message to client
     if(turn%2) si->send_fds[(si->size)++]=room->player_fd[0];
@@ -129,12 +138,12 @@ void exit_room(GAME_INFORMATION* gi,pool_room* pr){
 }
 
 void sendInfoToClient(room_option *room, send_info *si){
-    sprintf(si->send_string,"TUR\n%d\n",room->gi->turn);
+    sprintf(si->send_string,"ROO\nTUR\n%d\n",room->gi->turn);
     //보드 위 정보를 저장
     for(int i=0;i<ROW;i++){
         for(int j=0;j<COL;j++){
             char piece[3];
-            sprintf(piece,"%d",room->b->board[i][j]);
+            sprintf(piece,"%02d",room->b->board[i][j]);
             strcat(si->send_string,piece);
         }
     }
@@ -142,7 +151,7 @@ void sendInfoToClient(room_option *room, send_info *si){
 }
 
 void sendMoveableToClient(room_option *room,send_info* si, coordi* moveable_pos,int idx){
-    sprintf(si->send_string,"SEL\n%d\n",room->gi->turn);
+    sprintf(si->send_string,"ROO\nSEL\n%d\n",room->gi->turn);
     //좌표 정보 저장
     for(int i=0;i<idx;i++){
         char pos[6];
@@ -153,7 +162,7 @@ void sendMoveableToClient(room_option *room,send_info* si, coordi* moveable_pos,
 }
 
 void sendIsMoveToClient(room_option *room, send_info *si, bool move, bool finish){
-    sprintf(si->send_string,"MOV\n%d\n",room->gi->turn);
+    sprintf(si->send_string,"ROO\nMOV\n%d\n",room->gi->turn);
     if(move){//이동 성공
         strcat(si->send_string,"SUC\n");
     }
