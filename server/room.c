@@ -1,9 +1,9 @@
 #include "room.h"
 
-int room_main(pool_room* pr, char **arguments, int clientfd, send_info *si){
+int room_main(pool_client* pc,pool_room* pr, char **arguments, int clientidx, send_info *si){
     int room_id = atoi(arguments[1]);
     arguments = &arguments[2];
-	
+	int clientfd=pc->clientfd[clientidx];
 	printf("error?11\n");
     room_option *room = &pr->room[room_id];
     // PLY: init game, send (board info, turn)
@@ -27,6 +27,9 @@ int room_main(pool_room* pr, char **arguments, int clientfd, send_info *si){
     else if(!strcmp(arguments[0],"EXT")){
         finishGame(room->b);
         exit_room(room->gi, pr);
+    }
+    else if(!strcmp(arguments[0], "INF")){
+        sendGameInfoToClient(room,si,pc,clientidx);
     }
 }
 
@@ -175,4 +178,25 @@ void sendIsMoveToClient(room_option *room, send_info *si, bool move, bool finish
     else{//게임 안 끝나
         strcat(si->send_string,"RES\n");
     }
+}
+
+void sendGameInfoToClient(room_option* room, send_info* si,pool_client* pc, int clientidx){
+    sprintf(si->send_string,"ROO\nINF\n0\n");
+    si->send_fds[(si->size)++]=room->player_fd[0];
+    int enemy_idx=room->player_idx[1];
+    strcat(si->send_string,pc->client_info[enemy_idx].user_id);
+    for(int sendidx=0; sendidx< si->size; sendidx++){
+        writeall(si->send_fds[sendidx],si->send_string,MAX_LEN);
+    }
+    
+    si->size=0;
+    sprintf(si->send_string,"ROO\nINF\n1\n");
+    enemy_idx=room->player_idx[0];
+    strcat(si->send_string,pc->client_info[enemy_idx].user_id);
+    si->send_fds[(si->size)++]=room->player_fd[1];
+    for(int sendidx=0; sendidx< si->size; sendidx++){
+        writeall(si->send_fds[sendidx],si->send_string,MAX_LEN);
+    }
+
+    
 }
