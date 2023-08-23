@@ -193,8 +193,7 @@ class LoginScreen():
         self.reg_bt = pygame_gui.elements.UIButton(relative_rect=Rect(200, 100, 100, 40),
                                                    text='register', manager=self.manager,
                                                    anchors={'center': 'center'})
-        self.background = pygame.Surface((1280, 720))
-        self.background.fill('#FFFFFF')
+        self.background = pygame.image.load('./img/chess logo.png')
 
 
 
@@ -322,7 +321,7 @@ class LobbyScreen():
 
         self.rooms_panel_display = pygame_gui.elements.UIPanel(Rect(30, 30, 900, 650),
                                                 manager=self.manager)
-
+        self.rooms_panel_display.layer = 1
 
         self.create_room_window_rect = Rect(300, 100, 700, 500)
 
@@ -428,7 +427,7 @@ class LobbyScreen():
                     rmax_user = self.max_user_menu.selected_option
                     rtime = self.time_menu.selected_option
 
-                    sendtext = f'CRE\n{rname}\n{rmax_user}\n{1}\n'
+                    sendtext = f'CRE\n{rname}\n{rmax_user}\n{rtime}\n'
                     self.sock.sendall(sendtext)
                     
                     self.creating_room = True
@@ -642,7 +641,7 @@ class GameScreen():
                                                         text='asd',
                                                         manager=self.manager,
                                                         container=self.finish_window)
-        self.return_to_lobby_bt = pygame_gui.elements.UIButton(relative_rect=Rect(20, 300, 100, 100),
+        self.return_to_lobby_bt = pygame_gui.elements.UIButton(relative_rect=Rect(20, 300, 300, 100),
                                                                text='return to lobby',
                                                                manager=self.manager,
                                                                container=self.finish_window)
