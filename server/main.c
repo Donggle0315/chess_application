@@ -59,6 +59,7 @@ int main(){
                 pc.has_login[i] = -1;
                 pc.conn_count--;
                 printf("closed connection: %d \n", clientfd);
+				deleteClientFromRoom(&pr,&si,clientfd);
                 continue;
             }
             if(handle_client(&pc, &pr, mysql, buf, i, &si)){

@@ -76,7 +76,9 @@ typedef struct POOL_CLIENT{
 
 typedef struct GAME_INFORMATION{
     int player[MAX_PLAYER_NUM];
+	struct timeval prev_time;
     int turn;//몇번째 플레이어가 플레이할 차례인지
+	int room_id;
 }GAME_INFORMATION;
 
 typedef struct chess_board{
@@ -100,8 +102,8 @@ typedef struct chess_board{
     bool en_passant_flag;
 
     //게임 시간
-    int black_time;
-    int white_time;
+    int p1_time;
+    int p2_time;
 }chess_board;
 
 typedef struct ROOM_OPTION{
@@ -211,7 +213,7 @@ int fetch_information(pool_room*, send_info*);
  * input :
  * output :
 */
-int enter_room(pool_room*, int, int);
+int enter_room(pool_room*, int, int, int);
 
 /**
  * implement : 클라이언트가 서버 연결을 끊는다 : client_pool에서 해당 클라이언트 정보를 삭제함, Pool 업데이트
@@ -221,5 +223,8 @@ int enter_room(pool_room*, int, int);
 int exit_client(pool_client*, int);
 
 int open_clientfd();
+
+void deleteClientFromRoom(pool_room*, send_info*,int);
+
 
 #endif

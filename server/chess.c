@@ -39,10 +39,6 @@ chess_board* initBoard(){
         b->last_move[i]=false;
     }
 
-    /* 시간 설정 */
-    b->black_time=PLAY_TIME;
-    b->white_time=PLAY_TIME;
-
     return b;
 }
 
@@ -343,8 +339,8 @@ chess_board* copyBoard(chess_board* b){
         tmp->last_move[i]=b->last_move[i];
     }
     tmp->en_passant_flag=b->en_passant_flag;
-    tmp->black_time=b->black_time;
-    tmp->white_time=b->white_time;
+    tmp->p2_time=b->p2_time;
+    tmp->p1_time=b->p1_time;
 
     return tmp;
 }
@@ -377,8 +373,8 @@ void recover_board(chess_board* tmp, chess_board*b){
         tmp->last_move[i]=b->last_move[i];
     }
     tmp->en_passant_flag=b->en_passant_flag;
-    tmp->black_time=b->black_time;
-    tmp->white_time=b->white_time;
+    tmp->p2_time=b->p2_time;
+    tmp->p1_time=b->p1_time;
 
 }
 
@@ -401,7 +397,7 @@ bool isCheck(chess_board* b){
         for(int j=0;j<COL;j++){
             changeTurn(b);
             if(canMove(b,i,j,k_row,k_col)){
-                flag=true;
+                return true;
             }
             changeTurn(b);
         }
