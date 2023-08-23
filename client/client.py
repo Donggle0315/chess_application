@@ -4,7 +4,7 @@ import socket
 from pygame import Rect
 from enum import Enum, auto
 
-ADDR = '52.78.117.250:53938'
+ADDR = '3.34.182.4:59696'
 HOST, PORT = ADDR.split(':')
 PORT = int(PORT)
 MAXLEN = 2048
@@ -148,7 +148,7 @@ class NetworkPygame():
 
             elif msg[1] == 'TUR':
                 turn = int(msg[2])
-                board_str = msg[5]
+                board_str = msg[3]
 
                 new_event = pygame.event.Event(self.GAME_EVENT, {'utype': GameEvent.ROOM_TURN_CHANGE,
                                                                  'turn': turn,
@@ -165,7 +165,8 @@ class NetworkPygame():
                                                                  'p2_username': p2_username})
                 pygame.event.post(new_event)
             elif msg[1] == 'FIN':
-                new_event = pygame.event.Event(self.GAME_EVENT, {'utype': GameEvent.ROOM_GAME_FINISHED})
+                new_event = pygame.event.Event(self.GAME_EVENT, {'utype': GameEvent.ROOM_GAME_FINISHED,
+                                                                 'win_player': msg[2]})
                 pygame.event.post(new_event)
 
             elif msg[1] == 'RES':
@@ -632,6 +633,18 @@ class GameScreen():
         self.p1_info.set_position(20, 350)
         self.p2_info.set_position(960, 350)
 
+        self.finish_window = pygame_gui.elements.UIWindow(rect=Rect(200, 50, 800, 600))
+        self.finish_window.hide()
+        self.finish_window.enable_close_button = False
+        self.finish_label = pygame_gui.elements.UILabel(relative_rect=Rect(30, 30, 500, 100),
+                                                        text='asd',
+                                                        manager=self.manager,
+                                                        container=self.finish_window)
+        self.return_to_lobby_bt = pygame_gui.elements.UIButton(relative_rect=Rect(20, 300, 100, 100),
+                                                               text='return to lobby',
+                                                               manager=self.manager,
+                                                               container=self.finish_window)
+
 
         self.board[0][0] = 25
 
@@ -648,26 +661,28 @@ class GameScreen():
         # ROO\nINF\n
         self.get_player_info()
         self.running = True
+        self.gaming = False
 
     def run(self):
         while self.running:
             delta = self.clock.tick(120)/1000
-            if self.turn%2 == 1:
-                self.p1_time -= delta
-                if self.p1_time < 0:
-                    self.check_game_end()
-            else:
-                self.p2_time -= delta
-                if self.p2_time < 0:
-                    self.check_game_end()
+            if self.gaming:
+                if self.turn%2 == 1:
+                    self.p1_time -= delta
+                    if self.p1_time < 0:
+                        self.check_game_end()
+                else:
+                    self.p2_time -= delta
+                    if self.p2_time < 0:
+                        self.check_game_end()
 
-            self.update_time()
+                self.update_time()
 
             self.sock.process_network()
             self.handle_events()
             self.manager.update(delta)
             self.render()
-        return
+        return 'lobby', -1
 
     def handle_events(self):
         for event in pygame.event.get():
@@ -702,6 +717,8 @@ class GameScreen():
                 if event.ui_element == self.start_game_bt:
                     sendtext = f'ROO\n{self.room_id}\nPLY\n'
                     self.sock.sendall(sendtext)
+                elif event.ui_element == self.return_to_lobby_bt:
+                    self.running = False
 
             elif event.type == self.GAME_EVENT:
                 if hasattr(event, 'utype'):
@@ -713,6 +730,7 @@ class GameScreen():
                             self.board_gui[r][c].moveable = True
                             print(r, c, self.board_gui[r][c].moveable)
                     elif event.utype == GameEvent.ROOM_TURN_CHANGE:
+                        self.gaming = True
                         self.turn = event.turn
                         self.disable_moveable()
                         # parse board_str
@@ -732,9 +750,11 @@ class GameScreen():
                         self.p2_time = float(event.p2_time)
                         self.update_time()
                     elif event.utype == GameEvent.ROOM_GAME_FINISHED:
-                        print("someone won")
-                        self.running = False
-                    
+                        self.finish_label.set_text(f'{event.win_player} has won the game!')
+                        self.finish_window.show()
+
+                        self.gaming = False
+
             self.manager.process_events(event)
 
     def render(self):   
