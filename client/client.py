@@ -624,23 +624,24 @@ class GameScreen():
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 pos = pygame.mouse.get_pos()
                 if pos[0] > self.start_x and pos[0] < self.start_x+self.size*8 and pos[1] > self.start_y and pos[1] < self.start_y+self.size*8:
-                    # TODO: if turn
-                    for i in self.board_gui:
-                        for j in i:
-                            if j.rect.collidepoint(pos):
-                                print(j.board_coord)
-                                coord = j.board_coord
-                                # when clicked on location where is not movable (no marker)
-                                if self.board_gui[coord[1]][coord[0]].moveable == False:
-                                    sendtext = f'ROO\n{self.room_id}\nSEL\n{self.turn}\n{coord[1]}{coord[0]}\n'
-                                    self.sock.sendall(sendtext)
-                                    self.cur_select = [coord[0], coord[1]]
+                    if self.client_id == self.turn%2:
+                        # TODO: if turn
+                        for i in self.board_gui:
+                            for j in i:
+                                if j.rect.collidepoint(pos):
+                                    print(j.board_coord)
+                                    coord = j.board_coord
+                                    # when clicked on location where is not movable (no marker)
+                                    if self.board_gui[coord[1]][coord[0]].moveable == False:
+                                        sendtext = f'ROO\n{self.room_id}\nSEL\n{self.turn}\n{coord[1]}{coord[0]}\n'
+                                        self.sock.sendall(sendtext)
+                                        self.cur_select = [coord[0], coord[1]]
 
-                                # when clicking on marker, move the piece
-                                else:
-                                    sendtext = f'ROO\n{self.room_id}\nMOV\n{self.turn}\n{self.cur_select[1]}{self.cur_select[0]}{coord[1]}{coord[0]}\n'
-                                    print(sendtext)
-                                    self.sock.sendall(sendtext)
+                                    # when clicking on marker, move the piece
+                                    else:
+                                        sendtext = f'ROO\n{self.room_id}\nMOV\n{self.turn}\n{self.cur_select[1]}{self.cur_select[0]}{coord[1]}{coord[0]}\n'
+                                        print(sendtext)
+                                        self.sock.sendall(sendtext)
                                     
 
             elif event.type == pygame_gui.UI_BUTTON_PRESSED:
