@@ -20,7 +20,7 @@ room.c - prototypes adn definitions for room
  * input : 
  * output :
 */
-int room_main(pool_room*, char**, int, send_info*);
+int room_main(pool_client*, pool_room*, char**, int, send_info*);
 
 /**
  * implement : 

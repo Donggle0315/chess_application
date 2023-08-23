@@ -94,9 +94,9 @@ void parseline(char *buf, char **arguments){
 
 }
 
-int handle_client(pool_client *pc, pool_room *pr, MYSQL *mysql, char buf[], int clientfd, send_info *si){
+int handle_client(pool_client *pc, pool_room *pr, MYSQL *mysql, char buf[], int clientidx, send_info *si){
     char *arguments[32];
-
+    int clientfd=pc->clientfd[clientidx];
     parseline(buf, arguments);
     
     // when sending data delimeter is \n
@@ -141,7 +141,7 @@ int handle_client(pool_client *pc, pool_room *pr, MYSQL *mysql, char buf[], int 
     else if(!strcmp(buf, "ENT")){
         // ENT room_id
         int room_id = atoi(arguments[1]);
-        if(enter_room(pr, room_id, clientfd)){
+        if(enter_room(pr, room_id, clientfd,clientidx)){
             sprintf(si->send_string, "ENT\nSUC\n%d\n", room_id);
         }
         else{
@@ -152,7 +152,7 @@ int handle_client(pool_client *pc, pool_room *pr, MYSQL *mysql, char buf[], int 
     }   
     else if (!strcmp(buf, "ROO")){
         // ROO roomid PLY
-        room_main(pr, arguments, clientfd, si);
+        room_main(pc, pr, arguments, clientidx, si);
     }
 
 
@@ -232,14 +232,15 @@ int create_room(pool_room *pr, char **arguments, int clientfd, send_info *si){
     return true;
 }
 
-int enter_room(pool_room *pr, int room_id, int clientfd){
+int enter_room(pool_room *pr, int room_id, int clientfd,int clientidx){
     // check for errors
     if(pr->room[room_id].room_id == -1 ||
        pr->room[room_id].cur_user_count >= pr->room[room_id].max_user_count){
         return false;
     }
     
-    pr->room[room_id].player_fd[pr->room[room_id].cur_user_count++] = clientfd;
+    pr->room[room_id].player_fd[pr->room[room_id].cur_user_count] = clientfd;
+    pr->room[room_id].player_idx[pr->room[room_id].cur_user_count++]= clientidx;
     return true;
 }
 

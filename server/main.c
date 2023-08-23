@@ -61,7 +61,7 @@ int main(){
                 printf("closed connection: %d \n", clientfd);
                 continue;
             }
-            if(handle_client(&pc, &pr, mysql, buf, clientfd, &si)){
+            if(handle_client(&pc, &pr, mysql, buf, i, &si)){
                 for(int sendidx=0; sendidx < si.size; sendidx++){
                     writeall(si.send_fds[sendidx], si.send_string, MAX_LEN);
                 }

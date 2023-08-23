@@ -4,11 +4,7 @@ import socket
 from pygame import Rect
 from enum import Enum, auto
 
-<<<<<<< HEAD
-ADDR = '52.78.48.244:49152'
-=======
-ADDR = '127.0.0.1:12345'
->>>>>>> 6f2971231455c1d7fced751b3bf7509806785cf8
+ADDR = '52.78.117.250:53938'
 HOST, PORT = ADDR.split(':')
 PORT = int(PORT)
 MAXLEN = 2048

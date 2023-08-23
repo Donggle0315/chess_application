@@ -111,6 +111,7 @@ typedef struct ROOM_OPTION{
     int cur_user_count;
     int time;
     int player_fd[2];
+    int player_idx[2];
     GAME_INFORMATION *gi;
     chess_board *b;
 } room_option;
