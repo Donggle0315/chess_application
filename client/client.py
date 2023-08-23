@@ -4,11 +4,7 @@ import socket
 from pygame import Rect
 from enum import Enum, auto
 
-<<<<<<< HEAD
-ADDR = '52.78.48.244:49152'
-=======
-ADDR = '127.0.0.1:12345'
->>>>>>> 6f2971231455c1d7fced751b3bf7509806785cf8
+ADDR = '52.78.117.250:53938'
 HOST, PORT = ADDR.split(':')
 PORT = int(PORT)
 MAXLEN = 2048
@@ -312,7 +308,6 @@ class LobbyScreen():
 
         self.create_room_window.on_close_window_button_pressed = self.create_room_window.hide
         self.create_room_window.hide()
-        self.create_room_window.change_layer(20)
 
 
 
@@ -467,7 +462,7 @@ class LobbyScreen():
             positions.append((xpos, ypos))
             xpos = (xpos + 400) % 800
             if i % 2 == 1:
-                ypos += 210
+                ypos += 200
 
         for p, _, _ in self.rooms_panel:
             p.hide()
@@ -599,6 +594,9 @@ class GameScreen():
         self.GAME_EVENT = GAME_EVENT
         self.client_id = -1
 
+        # ROO\nINF\n
+        self.get_player_info()
+
     def run(self):
         while True:
             delta = self.clock.tick(120)/1000
@@ -679,6 +677,9 @@ class GameScreen():
         for i in self.board_gui:
             for j in i:
                 j.moveable = False
+    
+    def get_info(self):
+        self.sock.sendall(f"ROO\n{self.room_id}\nINF\n")
 
     def quit(self):
         # close the window, close the sockets, exit program
