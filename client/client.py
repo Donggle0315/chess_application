@@ -145,9 +145,14 @@ class NetworkPygame():
 
             elif msg[1] == 'TUR':
                 turn = int(msg[2])
-                board_str = msg[3]
+                p1_time = int(msg[3])
+                p2_time = int(msg[4])
+                board_str = msg[5]
+
                 new_event = pygame.event.Event(self.GAME_EVENT, {'utype': GameEvent.ROOM_TURN_CHANGE,
                                                                  'turn': turn,
+                                                                 'p1_time': p1_time,
+                                                                 'p2_time': p2_time,
                                                                  'board_str': board_str })
                 pygame.event.post(new_event)
 
@@ -585,6 +590,10 @@ class GameScreen():
         self.p2_time_indicator = pygame_gui.elements.UILabel(text='99:99',
                                                              relative_rect=self.p2_time_rect,
                                                              manager=self.manager)
+
+        self.p1_time = 100
+        self.p2_time = 100
+
         self.p1_info = PlayerInfoPanel(self.manager)
         self.p2_info = PlayerInfoPanel(self.manager)
 
@@ -610,6 +619,11 @@ class GameScreen():
     def run(self):
         while True:
             delta = self.clock.tick(120)/1000
+            if self.turn%2 == 0:
+                self.p1_time -= delta
+            else:
+                self.p2_time -= delta
+
             self.sock.process_network()
             self.handle_events()
             self.manager.update(delta)
@@ -624,6 +638,7 @@ class GameScreen():
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 pos = pygame.mouse.get_pos()
                 if pos[0] > self.start_x and pos[0] < self.start_x+self.size*8 and pos[1] > self.start_y and pos[1] < self.start_y+self.size*8:
+                    print(self.client_id, self.turn, self.turn%2)
                     if self.client_id == self.turn%2:
                         # TODO: if turn
                         for i in self.board_gui:
@@ -661,6 +676,9 @@ class GameScreen():
                     elif event.utype == GameEvent.ROOM_TURN_CHANGE:
                         self.turn = event.turn
                         self.disable_moveable()
+                        self.p1_time = event.p1_time
+                        self.p2_time = event.p2_time
+                        self.update_time()
                         # parse board_str
                         board_str = event.board_str
                         print(board_str)
@@ -681,6 +699,10 @@ class GameScreen():
         self.display_board()
         self.manager.draw_ui(self.window)
         pygame.display.flip()
+
+    def update_time(self):
+        self.p1_time_indicator.set_text(f'{int(self.p1_time)//60}{int(self.p1_time)%60}')
+        self.p2_time_indicator.set_text(f'{int(self.p2_time)//60}{int(self.p2_time)%60}')
 
     def display_board(self):
         for i in range(len(self.board)):
