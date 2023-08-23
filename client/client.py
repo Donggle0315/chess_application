@@ -633,7 +633,8 @@ class GameScreen():
         self.p1_info.set_position(20, 350)
         self.p2_info.set_position(960, 350)
 
-        self.finish_window = pygame_gui.elements.UIWindow(rect=Rect(200, 50, 800, 600))
+        self.finish_window = pygame_gui.elements.UIWindow(rect=Rect(200, 50, 800, 600),
+                                                          manager=self.manager)
         self.finish_window.hide()
         self.finish_window.layer = 100
         self.finish_window.enable_close_button = False
@@ -815,6 +816,7 @@ def start_game():
         elif window_state == 'game':
             game_screen = GameScreen(window, network, clock, info, GAME_EVENT)
             window_state, _ = game_screen.run()
+            print(window_state)
 
 
 
