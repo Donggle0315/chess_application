@@ -4,7 +4,7 @@ import socket
 from pygame import Rect
 from enum import Enum, auto
 
-ADDR = '52.78.117.250:53938'
+ADDR = '3.34.182.4:59696'
 HOST, PORT = ADDR.split(':')
 PORT = int(PORT)
 MAXLEN = 2048
@@ -148,7 +148,7 @@ class NetworkPygame():
 
             elif msg[1] == 'TUR':
                 turn = int(msg[2])
-                board_str = msg[5]
+                board_str = msg[3]
 
                 new_event = pygame.event.Event(self.GAME_EVENT, {'utype': GameEvent.ROOM_TURN_CHANGE,
                                                                  'turn': turn,
