@@ -802,7 +802,6 @@ def start_game():
     network = NetworkPygame(HOST, PORT, GAME_EVENT)
 
     login_screen = LoginScreen(window, network, clock, GAME_EVENT)
-    lobby_screen = LobbyScreen(window, network, clock, GAME_EVENT)
 
     
 
@@ -812,6 +811,7 @@ def start_game():
         if window_state == 'login':
             window_state, _ = login_screen.run()
         elif window_state == 'lobby':
+            lobby_screen = LobbyScreen(window, network, clock, GAME_EVENT)
             window_state, info = lobby_screen.run()
         elif window_state == 'game':
             game_screen = GameScreen(window, network, clock, info, GAME_EVENT)
