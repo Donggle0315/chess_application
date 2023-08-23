@@ -46,6 +46,7 @@ class GameEvent(Enum):
     ROOM_TURN_CHANGE = auto()
     ROOM_PLAYER_INFO = auto()
     ROOM_GAME_FINISHED = auto()
+    ROOM_GAME_TIME_CONTINUE = auto()
     
 class NetworkPygame():
     def __init__(self, HOST, PORT, GAME_EVENT):
@@ -147,14 +148,10 @@ class NetworkPygame():
 
             elif msg[1] == 'TUR':
                 turn = int(msg[2])
-                p1_time = int(msg[3])
-                p2_time = int(msg[4])
                 board_str = msg[5]
 
                 new_event = pygame.event.Event(self.GAME_EVENT, {'utype': GameEvent.ROOM_TURN_CHANGE,
                                                                  'turn': turn,
-                                                                 'p1_time': p1_time,
-                                                                 'p2_time': p2_time,
                                                                  'board_str': board_str })
                 pygame.event.post(new_event)
 
@@ -169,6 +166,15 @@ class NetworkPygame():
                 pygame.event.post(new_event)
             elif msg[1] == 'FIN':
                 new_event = pygame.event.Event(self.GAME_EVENT, {'utype': GameEvent.ROOM_GAME_FINISHED})
+                pygame.event.post(new_event)
+
+            elif msg[1] == 'RES':
+                p1_time = int(msg[2])
+                p2_time = int(msg[3])
+                new_event = pygame.event.Event(self.GAME_EVENT, {'utype': GameEvent.ROOM_GAME_TIME_CONTINUE,
+                                                                 'p1_time': p1_time,
+                                                                 'p2_time': p2_time })
+                pygame.event.post(new_event)
 
 class LoginScreen():
     def __init__(self, window: pygame.Surface, sock: NetworkPygame, clock: pygame.time.Clock, GAME_EVENT):
@@ -421,7 +427,7 @@ class LobbyScreen():
                     rmax_user = self.max_user_menu.selected_option
                     rtime = self.time_menu.selected_option
 
-                    sendtext = f'CRE\n{rname}\n{rmax_user}\n{rtime}\n'
+                    sendtext = f'CRE\n{rname}\n{rmax_user}\n{1}\n'
                     self.sock.sendall(sendtext)
                     
                     self.creating_room = True
@@ -641,9 +647,10 @@ class GameScreen():
 
         # ROO\nINF\n
         self.get_player_info()
+        self.running = True
 
     def run(self):
-        while True:
+        while self.running:
             delta = self.clock.tick(120)/1000
             if self.turn%2 == 1:
                 self.p1_time -= delta
@@ -708,9 +715,6 @@ class GameScreen():
                     elif event.utype == GameEvent.ROOM_TURN_CHANGE:
                         self.turn = event.turn
                         self.disable_moveable()
-                        self.p1_time = float(event.p1_time)
-                        self.p2_time = float(event.p2_time)
-                        self.update_time()
                         # parse board_str
                         board_str = event.board_str
                         print(board_str)
@@ -723,8 +727,13 @@ class GameScreen():
                         self.client_id = event.client_id
                         self.p1_info.username.set_text(event.p1_username)
                         self.p2_info.username.set_text(event.p2_username)
+                    elif event.utype == GameEvent.ROOM_GAME_TIME_CONTINUE:
+                        self.p1_time = float(event.p1_time)
+                        self.p2_time = float(event.p2_time)
+                        self.update_time()
                     elif event.utype == GameEvent.ROOM_GAME_FINISHED:
                         print("someone won")
+                        self.running = False
                     
             self.manager.process_events(event)
 
