@@ -635,6 +635,7 @@ class GameScreen():
 
         self.finish_window = pygame_gui.elements.UIWindow(rect=Rect(200, 50, 800, 600))
         self.finish_window.hide()
+        self.finish_window.layer = 100
         self.finish_window.enable_close_button = False
         self.finish_label = pygame_gui.elements.UILabel(relative_rect=Rect(30, 30, 500, 100),
                                                         text='asd',
@@ -813,7 +814,7 @@ def start_game():
             window_state, info = lobby_screen.run()
         elif window_state == 'game':
             game_screen = GameScreen(window, network, clock, info, GAME_EVENT)
-            window_state, info = game_screen.run()
+            window_state, _ = game_screen.run()
 
 
 
