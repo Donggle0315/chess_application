@@ -106,6 +106,7 @@ void handle_MOV(pool_room* pr,room_option *room, send_info *si, char** arguments
   
 	//check if the game finish
     bool finish = isFinish(room->b);
+	if(finish) printf("isFin is true\n");
     //send message to client
     si->size = 0;
 	if(turn%2) si->send_fds[(si->size)++]=room->player_fd[0];

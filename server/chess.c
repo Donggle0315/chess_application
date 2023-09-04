@@ -285,29 +285,34 @@ void afterMove(chess_board* b,int fr, int fc){
     }
 }
 
+
+void printB(chess_board* b){
+	
+}
 bool isFinish(chess_board* b){
-    return false;
-    bool false_flag=false;
-    int enemy_player=(b->player_turn==WHITE)?BLACK:WHITE;
+    bool flag=true;
+    int current_player=(b->player_turn==WHITE)?WHITE:BLACK;
+	//int our_king = (b->player_turn==BLACK)?B_KING:W_KING;
     for(int i=0;i<ROW;i++){
         for(int j=0;j<COL;j++){
-            if(getPieceColor(b->board[i][j])==enemy_player){
+            if(getPieceColor(b->board[i][j])==current_player){
                 coordi tmp_pos[64];
                 int tmp_idx=0;
-                changeTurn(b);
+                //changeTurn(b);
                 getMoveablePosition(b,i,j,tmp_pos,&tmp_idx);
                 for(int k=0;k<tmp_idx;k++){
                     chess_board* tmp_board=copyBoard(b);
                     int tmp=movePiece(b,i,j,tmp_pos[k].row,tmp_pos[k].col,false);
-                    if(!isCheck(b)) false_flag=true;
+					//if(b->board[tmp_pos[k].row][tmp_pos[k].col] == our_king ) flag=true;
+                    if(!isCheck(b)) flag=false;
                     recover_board(b,tmp_board);
                 }
-                changeTurn(b);
-                if(false_flag) return false;
+                //changeTurn(b);
+                if(!flag) return false;
             }
         }
     }
-    return true;
+    return true;s
 }
 
 chess_board* copyBoard(chess_board* b){
@@ -379,10 +384,9 @@ void recover_board(chess_board* tmp, chess_board*b){
 }
 
 bool isCheck(chess_board* b){
-    int k_row, k_col, color;
-    bool flag=false;
-    color=(b->player_turn==WHITE)?WHITE:BLACK;
-
+    int k_row, k_col;
+    int color=b->player_turn;
+	int enemy_color=(b->player_turn == WHITE) ? BLACK : WHITE;
     //본인 왕의 위치를 찾음
     for(int i=0;i<ROW;i++){
         for(int j=0;j<COL;j++){
@@ -395,14 +399,16 @@ bool isCheck(chess_board* b){
     //상대방 말이 본인의 왕의 위치로 이동할 수 있으면 true
     for(int i=0;i<ROW;i++){
         for(int j=0;j<COL;j++){
+			if(getPieceColor(b->board[i][j]) != enemy_color) continue;
             changeTurn(b);
             if(canMove(b,i,j,k_row,k_col)){
+				changeTurn(b);
                 return true;
             }
             changeTurn(b);
         }
     }
-    return flag;
+    return false;
 }
 
 void getMoveablePosition(chess_board* b, int row, int col,coordi* can_pos,int* idx){
