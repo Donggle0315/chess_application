@@ -102,11 +102,11 @@ bool handleQueen(ChessBoard*,int,int,int,int);
 bool handleKing(ChessBoard*,int,int,int,int);
 
 /**
- * implement : 선택된 말이 해당 지점으로 움직일 수 있는지를 판단하는 함수
+ * implement : check if selected piece can move to selected pos
  * input : chess_board pointer, 시작 행(int), 시작 열(int), 도착 행(int), 도착 열(int)
- * output : 움직일 수 있으면 true, 움직일 수 없으면 false
+ * output : true if it can move, else false
 */
-bool canMove(chess_board*,int,int,int,int);
+bool canMove(ChessBoard*,int,int,int,int);
 
 /**
  * implement : 말을 움직이는 함수로, 특수 규칙에 따라 추가적인 움직임 발생 가능

@@ -116,78 +116,85 @@ bool handleRook(ChessBoard* chess_board, int start_row, int start_col, int finis
     return true;
 }
 
-bool handleKnight(chess_board* b, int start_row, int start_col, int finish_row, int finish_col){
-    int move_row=finish_row-start_row;
-    int move_col=finish_col-start_col;
+bool handleKnight(ChessBoard* chess_board, int start_row, int start_col, int finish_row, int finish_col){
+    int move_row = finish_row-start_row;
+    int move_col = finish_col-start_col;
 
-    if(abs(move_row)==2 && abs(move_col)==1 ) return true;
-    if(abs(move_row)==1 && abs(move_col)==2 ) return true;
+    if(abs(move_row) == 2 && abs(move_col) == 1 ) return true;
+    if(abs(move_row) == 1 && abs(move_col) == 2 ) return true;
     return false;
 }
 
-bool handleBishop(chess_board* b, int start_row, int start_col, int finish_row, int finish_col){
+bool handleBishop(ChessBoard* chess_board, int start_row, int start_col, int finish_row, int finish_col){
     int move_row=finish_row-start_row;
     int move_col=finish_col-start_col;
 
-    if(move_row==0 || move_col==0 || abs(move_row)!=abs(move_col)) return false;
+    /* don't move diagonally */
+    if(move_row == 0 || move_col == 0 || abs(move_row) != abs(move_col)) return false;
 
-    if(start_row<finish_row && start_col<finish_col){//우하향
-        for(int i=start_row+1,j=start_col+1; i<finish_row; i++,j++){
-            if(b->board[i][j]!=BLANK) return false;
+    if(start_row < finish_row && start_col < finish_col){//right down
+        for(int row_idx = start_row+1,col_idx = start_col+1; row_idx < finish_row; row_idx++,col_idx++){
+            if(chess_board->board[row_idx][col_idx] != BLANK) return false;
         }
     }
-    else if(start_row<finish_row && start_col>finish_col){//좌하향
-        for(int i=start_row+1,j=start_col-1; i<finish_row; i++,j--){
-            if(b->board[i][j]!=BLANK) return false;
+    else if(start_row < finish_row && start_col > finish_col){//left down
+        for(int row_idx = start_row+1,col_idx = start_col-1; row_idx < finish_row; row_idx++,col_idx--){
+            if(chess_board->board[row_idx][col_idx] != BLANK) return false;
         }
     }
-    else if(start_row>finish_row && start_col<finish_col){//우상향
-        for(int i=start_row-1,j=start_col+1; i>finish_row; i--,j++){
-            if(b->board[i][j]!=BLANK) return false;
+    else if(start_row > finish_row && start_col < finish_col){//right up
+        for(int row_idx = start_row-1,col_idx = start_col+1; row_idx > finish_row; row_idx--,col_idx++){
+            if(chess_board->board[row_idx][col_idx] != BLANK) return false;
         }
     }
-    else if(start_row>finish_row && start_col>finish_col){//좌상향
-        for(int i=start_row-1,j=start_col-1; i>finish_row; i--,j--){
-            if(b->board[i][j]!=BLANK) return false;
+    else if(start_row > finish_row && start_col > finish_col){//left up
+        for(int row_idx = start_row-1,col_idx = start_col-1; row_idx > finish_row; row_idx--,col_idx--){
+            if(chess_board->board[row_idx][col_idx] != BLANK) return false;
         }
     }
+
     return true;
 }
 
-bool handleQueen(chess_board* b, int start_row, int start_col, int finish_row, int finish_col){
-    return handleBishop(b,start_row,start_col,finish_row,finish_col) || handleRook(b,start_row,start_col,finish_row,finish_col);
+bool handleQueen(ChessBoard* chess_board, int start_row, int start_col, int finish_row, int finish_col){
+    /* check move diagonally by handleBishop and move horizonally and vertically by handleRook */
+    return handleBishop(chess_board,start_row,start_col,finish_row,finish_col) || handleRook(chess_board,start_row,start_col,finish_row,finish_col);
 }
 
-bool handleKing(chess_board* b, int start_row, int start_col, int finish_row, int finish_col){
-    int move_row=finish_row-start_row;
-    int move_col=finish_col-start_col;
+bool handleKing(ChessBoard* chess_board, int start_row, int start_col, int finish_row, int finish_col){
+    int move_row = finish_row-start_row;
+    int move_col = finish_col-start_col;
 
-    if(abs(move_row)==1 && move_col==0) return true;
-    if(move_row==0 && abs(move_col)==1) return true;
-    if(abs(move_row)==1 && abs(move_col)==1) return true;
+    if(abs(move_row) == 1 && move_col == 0) return true;//move one piece vertically
+    if(move_row == 0 && abs(move_col) == 1) return true;//move one piece horizonally
+    if(abs(move_row) == 1 && abs(move_col) == 1) return true;//move one piece diagonally
+
     return false;
 }
 
-bool canMove(chess_board* b, int start_row, int start_col, int finish_row, int finish_col){
-    //보드 밖으로 움직이거나, 자신이 말이 아닌 것을 움직이려거나, 자신의 말로 움직이려거나, 빈칸을 움직이려할 때
-    if(start_row<0 || start_row>=ROW || start_col<0 || start_col>=COL || finish_row<0 || finish_row>=ROW || finish_col<0 || finish_col>=COL) return false;
-    if(getPieceColor(b->board[start_row][start_col]) != b->player_turn) return false;
-    if(getPieceColor(b->board[finish_row][finish_col]) == b-> player_turn) return false;
-    if(getPieceColor(b->board[start_row][start_col]) == BLANK) return false;
-    switch((b->board[start_row][start_col])%10){
+bool canMove(ChessBoard* chess_board, int start_row, int start_col, int finish_row, int finish_col){
+    /* check selected pos is out of board */
+    if(start_row < 0 || start_row >= ROW || start_col < 0 || start_col >= COL || finish_row < 0 || finish_row >= ROW || finish_col < 0 || finish_col >= COL) return false;
+    /* check selected piece is legal */
+    if(getPieceColor(chess_board->board[start_row][start_col]) != chess_board->player_turn) return false;
+    if(getPieceColor(chess_board->board[finish_row][finish_col]) == chess_board-> player_turn) return false;
+    if(getPieceColor(chess_board->board[start_row][start_col]) == BLANK) return false;
+    /* check if selected piece can move */
+    switch((chess_board->board[start_row][start_col]) % 10){
         case 1 ://ROOK
-            return handleRook(b,start_row,start_col,finish_row,finish_col);
+            return handleRook(chess_board,start_row,start_col,finish_row,finish_col);
         case 2 ://KNIGHT
-            return handleKnight(b,start_row,start_col,finish_row,finish_col);
+            return handleKnight(chess_board,start_row,start_col,finish_row,finish_col);
         case 3 ://BISHOP
-            return handleBishop(b,start_row,start_col,finish_row,finish_col);
+            return handleBishop(chess_board,start_row,start_col,finish_row,finish_col);
         case 4 ://QUEEN
-            return handleQueen(b,start_row,start_col,finish_row,finish_col);
+            return handleQueen(chess_board,start_row,start_col,finish_row,finish_col);
         case 5 ://KING
-            return handleKing(b,start_row,start_col,finish_row,finish_col);
+            return handleKing(chess_board,start_row,start_col,finish_row,finish_col);
         case 6://PAWN
-            return handlePawn(b,start_row,start_col,finish_row,finish_col);
+            return handlePawn(chess_board,start_row,start_col,finish_row,finish_col);
     }
+    
     return false;
 }
 
