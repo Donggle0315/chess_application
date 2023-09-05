@@ -38,82 +38,68 @@ typedef struct coordi{
 
 /* 게임 시작 및 초기화 & 게임 종료 */
 /**
- * implement : 게임시작하고자 할 때, 게임에 필요한 변수들 초기화
+ * implement : allocate chess board and initialize game states
  * input : x
- * output : chess_board Pointer
+ * output : ChessBoard Pointer
 */
-chess_board* initBoard();
+ChessBoard* initBoard();
 
 /**
- * implement : 지워도 될거 같음
- * input : x
+ * implement : free ongoing game and re-start game
+ * input : ChessBoard pointer to finish
+ * output : ChessBoard poitner to play
+*/
+ChessBoard* resetGame(ChessBoard*);
+
+/**
+ * implement : de-allocate chess board to finish the game
+ * input : ChessBoard pointer to de-allocate
  * output : x
 */
-void gameStart();
-
-/**
- * implement : 진행중인 게임을 초기화(free)하고 새로운 게임을 만듦(init)
- * input : 중단하고자하는 chess_board pointer
- * output : 새롭게 만들어진 chess_board poitner
-*/
-chess_board* resetGame(chess_board*);
-
-/**
- * implement : 
- * input :
- * output :
-*/
-void undoGame();
-
-/**
- * implement : 게임이 끝났을 때 보드판을 초기화(Free) 및 승패 여부를 알려줌
- * input : 초기화 하고자 하는 chess_board pointer
- * output : x
-*/
-void finishGame(chess_board*);
+void finishGame(ChessBoard*);
 
 /* 말의 이동을 확인하고 이동시키는 함수들 */
 /**
- * implement : 폰이 이동 가능한지 확인하는 함수
+ * implement : check selected pawn can move
  * input : chess_board pointer, 시작 행(int), 시작 열(int), 도착 행(int), 도착 열(int)
- * output : 움직일 수 있으면 true, 움직일 수 없으면 false
+ * output : true if it can move, else false
 */
-bool handlePawn(chess_board*,int,int,int,int);
+bool handlePawn(ChessBoard*, int, int, int, int);
 
 /**
- * implement : 룩이 이동 가능한지 확인하는 함수
+ * implement : check selected rook can move
  * input : chess_board pointer, 시작 행(int), 시작 열(int), 도착 행(int), 도착 열(int)
- * output : 움직일 수 있으면 true, 움직일 수 없으면 false
+ * output : true if it can move, else false
 */
-bool handleRook(chess_board*,int,int,int,int);
+bool handleRook(ChessBoard*,int,int,int,int);
 
 /**
- * implement : 나이트가 이동 가능한지 확인하는 함수
+ * implement : check selected knight can move
  * input : chess_board pointer, 시작 행(int), 시작 열(int), 도착 행(int), 도착 열(int)
- * output : 움직일 수 있으면 true, 움직일 수 없으면 false
+ * output : true if it can move, else false
 */
-bool handleKnight(chess_board*,int,int,int,int);
+bool handleKnight(ChessBoard*,int,int,int,int);
 
 /**
- * implement : 비숍이 이동 가능한지 확인하는 함수
+ * implement : check selected bishop can move
  * input : chess_board pointer, 시작 행(int), 시작 열(int), 도착 행(int), 도착 열(int)
- * output : 움직일 수 있으면 true, 움직일 수 없으면 false
+ * output : true if it can move, else false
 */
-bool handleBishop(chess_board*,int,int,int,int);
+bool handleBishop(ChessBoard*,int,int,int,int);
 
 /**
- * implement : 퀸이 이동 가능한지 확인하는 함수 
+ * implement : check selected queen can move
  * input : chess_board pointer, 시작 행(int), 시작 열(int), 도착 행(int), 도착 열(int)
- * output : 움직일 수 있으면 true, 움직일 수 없으면 false
+ * output : true if it can move, else false
 */
-bool handleQueen(chess_board*,int,int,int,int);
+bool handleQueen(ChessBoard*,int,int,int,int);
 
 /**
- * implement : 킹이 이동 가능한지 확인하는 함수
+ * implement : check selected king can move
  * input : chess_board pointer, 시작 행(int), 시작 열(int), 도착 행(int), 도착 열(int)
- * output : 움직일 수 있으면 true, 움직일 수 없으면 false
+ * output : true if it can move, else false
 */
-bool handleKing(chess_board*,int,int,int,int);
+bool handleKing(ChessBoard*,int,int,int,int);
 
 /**
  * implement : 선택된 말이 해당 지점으로 움직일 수 있는지를 판단하는 함수
