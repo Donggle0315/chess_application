@@ -59,7 +59,7 @@ void finishGame(ChessBoard* chess_board){
     free(chess_board);
 }
 
-/* 말의 이동을 확인하고 이동시키는 함수들 */
+/* Functions which checkes piece's moving and makes the piece move */
 
 bool handlePawn(ChessBoard* chess_board, int start_row, int start_col, int finish_row, int finish_col){
     int move_row = finish_row-start_row;
@@ -201,8 +201,11 @@ bool canMove(ChessBoard* chess_board, int start_row, int start_col, int finish_r
 }
 
 int movePiece(ChessBoard* chess_board,int start_row,int start_col, int finish_row, int finish_col, bool option){
+    /* store death piece's code */
     int death_code = BLANK;
-    if(chess_board->en_passant_flag){//앙파상인 경우
+
+    /* if en_passant is occured */
+    if(chess_board->en_passant_flag){
         if((chess_board->board[start_row][start_col] % 10) == 6 && abs(start_col-finish_col) == 1 && chess_board->board[finish_row][finish_col] == BLANK){
             if(chess_board->player_turn == BLACK){
                 chess_board->board[chess_board->last_move[2]+1][chess_board->last_move[3]] = chess_board->board[chess_board->last_move[2]][chess_board->last_move[3]];
@@ -215,7 +218,8 @@ int movePiece(ChessBoard* chess_board,int start_row,int start_col, int finish_ro
         }
     }
 
-    if(chess_board->castling_flag){//캐슬링
+    /* if castling is occured */
+    if(chess_board->castling_flag){
         if(start_row == 0 && start_col == 4 && finish_row == 0 && finish_col == 1){
             chess_board->board[0][2] = chess_board->board[0][0];
             chess_board->board[0][0] = BLANK;
@@ -234,156 +238,159 @@ int movePiece(ChessBoard* chess_board,int start_row,int start_col, int finish_ro
         }
     }
 
-    //말을 잡은 경우 deathCode에 해당 말 정보 등록
-    if(getPieceColor(chess_board->board[finish_row][finish_col])!=BLANK) deathCode=chess_board->board[finish_row][finish_col];
+    /* if a piece kills enemy piece, store the dead piece into deathcode variable */
+    if(getPieceColor(chess_board->board[finish_row][finish_col]) != BLANK) {
+        deathCode = chess_board->board[finish_row][finish_col];
+    }
 
-    //말 이동
-    chess_board->board[finish_row][finish_col]=chess_board->board[start_row][start_col];
-    chess_board->board[start_row][start_col]=BLANK;
+    /* move selected piece */
+    chess_board->board[finish_row][finish_col] = chess_board->board[start_row][start_col];
+    chess_board->board[start_row][start_col] = BLANK;
 
-    if(option){//캐슬링 확인
-        chess_board->last_move[0]=start_row;
-        chess_board->last_move[1]=start_col;
-        chess_board->last_move[2]=finish_row;
-        chess_board->last_move[3]=finish_col;
-        chess_board->last_move[4]=chess_board->board[finish_row][finish_col];
+    /* if option is true, then the board state must be changed so that store changed states */
+    if(option){
+        chess_board->last_move[0] = start_row;
+        chess_board->last_move[1] = start_col;
+        chess_board->last_move[2] = finish_row;
+        chess_board->last_move[3] = finish_col;
+        chess_board->last_move[4] = chess_board->board[finish_row][finish_col];
 
-        if(start_row==0 && start_col==0) chess_board->castling_check[0]=true;//LEFT B_ROOK
-        else if(start_row==0 && start_col==4) chess_board->castling_check[1]=true;//B_KING
-        else if(start_row==0 && start_col==7) chess_board->castling_check[2]=true;//RIGHT B_ROOK
-        else if(start_row==7 && start_col==0) chess_board->castling_check[3]=true;//LEFT W_ROOK
-        else if(start_row==7 && start_col==4) chess_board->castling_check[4]=true;//W_KING
-        else if(start_row==7 && start_col==7) chess_board->castling_check[5]=true;//RIGHT B_ROOK
+        if(start_row == 0 && start_col == 0) chess_board->castling_check[0] = true;//LEFT B_ROOK
+        else if(start_row == 0 && start_col == 4) chess_board->castling_check[1] = true;//B_KING
+        else if(start_row == 0 && start_col == 7) chess_board->castling_check[2] = true;//RIGHT B_ROOK
+        else if(start_row == 7 && start_col == 0) chess_board->castling_check[3] = true;//LEFT W_ROOK
+        else if(start_row == 7 && start_col == 4) chess_board->castling_check[4] = true;//W_KING
+        else if(start_row == 7 && start_col == 7) chess_board->castling_check[5] = true;//RIGHT B_ROOK
     }
 
     return deathCode;
 }   
 
-void addDeathPiece(chess_board*b, int deathCode){
-    int enemy=(chess_board->player_turn==WHITE)?BLACK:WHITE;
-    if(enemy==WHITE){
-        chess_board->white_death[chess_board->w_death_idx]=deathCode;
+void addDeathPiece(ChessBoard *chess_board, int deathCode){
+    int enemy_player = (chess_board->player_turn == WHITE) ? BLACK : WHITE;
+    if(enemy_player == WHITE){
+        chess_board->white_death[chess_board->w_death_idx] = deathCode;
         (chess_board->w_death_idx)++;
     }
-    else if(enemy==BLACK){
-        chess_board->black_death[chess_board->b_death_idx]=deathCode;
+    else if(enemy_player == BLACK){
+        chess_board->black_death[chess_board->b_death_idx] = deathCode;
         (chess_board->b_death_idx)++;
     }
 }
-/* 게임 진행 여부를 확인하는 함수들 */
 
-int getPieceColor(int piece){
-    if(BLACK < piece && piece <= B_PAWN) return BLACK;
-    if(WHITE < piece && piece <= W_PAWN) return WHITE;
+/* Functions which is checking chess game status */
+
+int getPieceColor(int piece_code){
+    if(BLACK < piece_code && piece_code <= B_PAWN) return BLACK;
+    if(WHITE < piece_code && piece_code <= W_PAWN) return WHITE;
     return BLANK;
 }
 
-void afterMove(chess_board* b,int finish_row, int finish_col){
-    if(chess_board->board[finish_row][finish_col]%10==6){//도착한 말이 폰일 경우
-        int check_row=(chess_board->player_turn==BLACK) ? 7 : 0;
-        if(finish_row==check_row){
-            chess_board->promotion_r=finish_row;
-            chess_board->promotion_c=finish_col;
+void afterMove(ChessBoard* chess_board, int finish_row, int finish_col){
+    if(chess_board->board[finish_row][finish_col] % 10 == 6){//Pawn 
+        int check_row = (chess_board->player_turn==BLACK) ? 7 : 0;//pawn arrived at opposite end place
+        if(finish_row == check_row){
+            chess_board->promotion_r = finish_row;
+            chess_board->promotion_c = finish_col;
             //drawPromotion(chess_board->player_turn); //need : 추가 구현
         }
     }
 }
 
-bool isFinish(chess_board* b){
-    bool flag=true;
-    int current_player=(chess_board->player_turn==WHITE)?WHITE:BLACK;
-	//int our_king = (chess_board->player_turn==BLACK)?B_KING:W_KING;
-    for(int i=0;i<ROW;i++){
-        for(int j=0;j<COL;j++){
-            if(getPieceColor(chess_board->board[i][j])==current_player){
-                coordi tmp_pos[64];
-                int tmp_idx=0;
-                //changeTurn(b);
-                getMoveablePosition(b,i,j,tmp_pos,&tmp_idx);
-                for(int k=0;k<tmp_idx;k++){
-                    chess_board* tmp_board=copyBoard(b);
-                    int tmp=movePiece(b,i,j,tmp_pos[k].row,tmp_pos[k].col,false);
-					//if(chess_board->board[tmp_pos[k].row][tmp_pos[k].col] == our_king ) flag=true;
-                    if(!isCheck(b)) flag=false;
-                    recover_board(b,tmp_board);
+bool isFinish(ChessBoard* chess_board){
+    bool finish_flag = true;//if flag is true, then the game is finished
+    int current_player = (chess_board->player_turn == WHITE) ? WHITE : BLACK;
+
+    for(int row_idx = 0; row_idx < ROW; row_idx++){
+        for(int col_idx = 0; col_idx < COL; col_idx++){
+            if(getPieceColor(chess_board->board[row_idx][col_idx]) == current_player){
+                /* store movealbe positions of selected piece */
+                Coordi moveable_pos[64];
+                int moveable_pos_idx = 0;
+                getMoveablePosition(chess_board,row_idx,col_idx,moveable_pos,&moveable_pos_idx);//get moveable position of selected piece
+                for(int pos_idx = 0; pos_idx < moveable_pos_idx; pos_idx++){
+                    ChessBoard* copy_board = copyBoard(chess_board);//store original board
+                    int tmp_death_code = movePiece(chess_board,row_idx,col_idx,moveable_pos[pos_idx].row,moveable_pos[pos_idx].col,false);
+                    if(!isCheck(chess_board)) finish_flag = false;//this game is not finished
+                    recover_board(chess_board,copy_board);//restore original board
                 }
-                //changeTurn(b);
-                if(!flag) return false;
+                if(!finish_flag) return false;//player can move a piece
             }
         }
     }
-    return true;s
+
+    return true;
 }
 
-chess_board* copyBoard(chess_board* b){
-    chess_board* tmp=(chess_board*)malloc(sizeof(chess_board));
-    for(int i=0;i<ROW;i++){
-        for(int j=0;j<COL;j++){
-            tmp->board[i][j]=chess_board->board[i][j];
+ChessBoard* copyBoard(ChessBoard* chess_board){
+    ChessBoard* copy_board = (ChessBoard*)malloc(sizeof(ChessBoard));
+    for(int row_idx = 0; row_idx < ROW; row_idx++){
+        for(int col_idx = 0; col_idx < COL; col_idx++){
+            copy_board->board[row_idx][col_idx] = chess_board->board[row_idx][col_idx];
         }
     }
-    for(int i=0;i<PEICE_CNT;i++){
-        tmp->white_death[i]=chess_board->white_death[i];
-        tmp->black_death[i]=chess_board->black_death[i];
+    for(int idx = 0; idx < PEICE_CNT; idx++){
+        copy_board->white_death[idx] = chess_board->white_death[idx];
+        copy_board->black_death[idx] = chess_board->black_death[idx];
     }
-    tmp->w_death_idx=chess_board->w_death_idx;
-    tmp->b_death_idx=chess_board->b_death_idx;
+    copy_board->w_death_idx = chess_board->w_death_idx;
+    copy_board->b_death_idx = chess_board->b_death_idx;
 
-    tmp->black_check=chess_board->black_check;
-    tmp->white_check=chess_board->white_check;
-    tmp->player_turn=chess_board->player_turn;
+    copy_board->black_check = chess_board->black_check;
+    copy_board->white_check = chess_board->white_check;
+    copy_board->player_turn = chess_board->player_turn;
 
-    tmp->promotion_r=chess_board->promotion_r;
-    tmp->promotion_c=chess_board->promotion_c;
+    copy_board->promotion_r = chess_board->promotion_r;
+    copy_board->promotion_c = chess_board->promotion_c;
 
-    for(int i=0;i<6;i++){
-        tmp->castling_check[i]=chess_board->castling_check[i];
+    for(int idx = 0; idx < 6; idx++){
+        copy_board->castling_check[idx] = chess_board->castling_check[idx];
     }
-    tmp->castling_flag=chess_board->castling_flag;
-    for(int i=0;i<5;i++){
-        tmp->last_move[i]=chess_board->last_move[i];
+    copy_board->castling_flag = chess_board->castling_flag;
+    for(int idx = 0; idx < 5; idx++){
+        copy_board->last_move[idx] = chess_board->last_move[idx];
     }
-    tmp->en_passant_flag=chess_board->en_passant_flag;
-    tmp->p2_time=chess_board->p2_time;
-    tmp->p1_time=chess_board->p1_time;
+    copy_board->en_passant_flag = chess_board->en_passant_flag;
+    copy_board->p2_time = chess_board->p2_time;
+    copy_board->p1_time = chess_board->p1_time;
 
-    return tmp;
+    return copyBoard;
 }
 
-void recover_board(chess_board* tmp, chess_board*b){
-    for(int i=0;i<ROW;i++){
-        for(int j=0;j<COL;j++){
-            tmp->board[i][j]=chess_board->board[i][j];
+void recoverBoard(ChessBoard* original_board, ChessBoard* chess_board){
+    for(int row_idx = 0; row_idx < ROW; row_idx++){
+        for(int col_idx = 0; col_idx < COL; col_idx++){
+            original_board->board[row_idx][col_idx] = chess_board->board[row_idx][col_idx];
         }
     }
-    for(int i=0;i<PEICE_CNT;i++){
-        tmp->white_death[i]=chess_board->white_death[i];
-        tmp->black_death[i]=chess_board->black_death[i];
+    for(int idx = 0; idx < PEICE_CNT; idx++){
+        original_board->white_death[idx] = chess_board->white_death[idx];
+        original_board->black_death[idx] = chess_board->black_death[idx];
     }
-    tmp->w_death_idx=chess_board->w_death_idx;
-    tmp->b_death_idx=chess_board->b_death_idx;
+    original_board->b_death_idx = chess_board->b_death_idx;
+    original_board->w_death_idx = chess_board->w_death_idx;
 
-    tmp->black_check=chess_board->black_check;
-    tmp->white_check=chess_board->white_check;
-    tmp->player_turn=chess_board->player_turn;
+    original_board->black_check = chess_board->black_check;
+    original_board->white_check = chess_board->white_check;
+    original_board->player_turn = chess_board->player_turn;
 
-    tmp->promotion_r=chess_board->promotion_r;
-    tmp->promotion_c=chess_board->promotion_c;
+    original_board->promotion_r = chess_board->promotion_r;
+    original_board->promotion_c = chess_board->promotion_c;
 
-    for(int i=0;i<6;i++){
-        tmp->castling_check[i]=chess_board->castling_check[i];
+    for(int idx = 0; idx<6; idx++){
+        original_board->castling_check[idx] = chess_board->castling_check[idx];
     }
-    tmp->castling_flag=chess_board->castling_flag;
-    for(int i=0;i<5;i++){
-        tmp->last_move[i]=chess_board->last_move[i];
+    original_board->castling_flag = chess_board->castling_flag;
+    for(int idx = 0; idx < 5; idx++){
+        original_board->last_move[idx] = chess_board->last_move[idx];
     }
-    tmp->en_passant_flag=chess_board->en_passant_flag;
-    tmp->p2_time=chess_board->p2_time;
-    tmp->p1_time=chess_board->p1_time;
+    original_board->en_passant_flag = chess_board->en_passant_flag;
+    original_board->p2_time = chess_board->p2_time;
+    original_board->p1_time = chess_board->p1_time;
 
 }
 
-bool isCheck(chess_board* b){
+bool isCheck(ChessBoard* b){
     int k_row, k_col;
     int color=chess_board->player_turn;
 	int enemy_color=(chess_board->player_turn == WHITE) ? BLACK : WHITE;
