@@ -286,7 +286,7 @@ int getPieceColor(int piece_code){
     return BLANK;
 }
 
-void afterMove(ChessBoard* chess_board, int finish_row, int finish_col){
+void afterMoveCheckPromotion(ChessBoard* chess_board, int finish_row, int finish_col){
     if(chess_board->board[finish_row][finish_col] % 10 == 6){//Pawn 
         int check_row = (chess_board->player_turn==BLACK) ? 7 : 0;//pawn arrived at opposite end place
         if(finish_row == check_row){
@@ -390,73 +390,78 @@ void recoverBoard(ChessBoard* original_board, ChessBoard* chess_board){
 
 }
 
-bool isCheck(ChessBoard* b){
-    int k_row, k_col;
-    int color=chess_board->player_turn;
-	int enemy_color=(chess_board->player_turn == WHITE) ? BLACK : WHITE;
-    //본인 왕의 위치를 찾음
-    for(int i=0;i<ROW;i++){
-        for(int j=0;j<COL;j++){
-            if(chess_board->board[i][j]%10==5 && getPieceColor(chess_board->board[i][j])==color){//자신의 왕일 때
-                k_row=i;
-                k_col=j;
+bool isCheck(ChessBoard* chess_board){
+    int king_row, king_col;
+    int current_player = chess_board->player_turn;
+	int enemy_player = (chess_board->player_turn == WHITE) ? BLACK : WHITE;
+
+    /* find current player's king's position */
+    for(int row_idx = 0; row_idx < ROW; row_idx++){
+        for(int col_idx = 0; col_idx < COL; col_idx++){
+            if(chess_board->board[i][j] % 10 == 5 && getPieceColor(chess_board->board[row_idx][col_idx]) == current_player){//자신의 왕일 때
+                king_row = row_idx;
+                king_col = col_idx;
             }
         }
     }
-    //상대방 말이 본인의 왕의 위치로 이동할 수 있으면 true
-    for(int i=0;i<ROW;i++){
-        for(int j=0;j<COL;j++){
-			if(getPieceColor(chess_board->board[i][j]) != enemy_color) continue;
-            changeTurn(b);
-            if(canMove(b,i,j,k_row,k_col)){
-				changeTurn(b);
+
+    /* if any enemy piece can move to current_player's king, then return ture */
+    for(int row_idx = 0; row_idx < ROW; row_idx++){
+        for(int col_idx = 0;col_idx < COL; col_idx++){
+			if(getPieceColor(chess_board->board[row_idx][col_idx]) != enemy_player) continue;
+            /* check if enemy's piece can move to king */
+            changeTurn(chess_board);
+            if(canMove(chess_board,row_idx,col_idx,king_row,king_col)){
+				changeTurn(chess_board);
                 return true;
             }
-            changeTurn(b);
+            changeTurn(chess_board);
         }
     }
+
+    /* check king doesn't occur */
     return false;
 }
 
-void getMoveablePosition(chess_board* b, int row, int col,coordi* can_pos,int* idx){
-    for(int i=0;i<ROW;i++){
-        for(int j=0;j<COL;j++){
-            if(canMove(b,row,col,i,j)){
-                chess_board* tmp_board=copyBoard(b);
-                int tmp=movePiece(b,row,col,i,j,false);
-                if(!isCheck(b)){
-                    can_pos[*idx].row=i;
-                    can_pos[*idx].col=j;
-                    (*idx)++;
+void getMoveablePosition(ChessBoard* chess_board, int row, int col, Coordi* can_pos_list, int* can_pos_idx){
+    for(int row_idx = 0; row_idx < ROW; row_idx++){
+        for(int col_idx = 0; col_idx < COL; col_idx++){
+            /* check if selected piece can move [row_idx][col_idx] and it deosn't make its king be checked */
+            if(canMove(chess_board,row,col,row_idx,col_idx)){
+                chess_board* copy_board = copyBoard(chess_board);
+                int tmp_deate_code = movePiece(chess_board,row,col,row_idx,col_idx,false);
+                if(!isCheck(chess_board)){
+                    /* add moveable position */
+                    can_pos_list[*can_pos_idx].row = i;
+                    can_pos_list[(*can_pos_idx)++].col = j;
                 }
-                recover_board(b,tmp_board);
+                recoverBoard(chess_board,copy_board);
             }
         }
     }
 
-    coordi tmp_en_passant;
-    enPassant(b,&tmp_en_passant,row,col);
+    /* check if selected piece can do en_passant */
+    Coordi en_passant_pos;
+    canEnPassant(chess_board,&en_passant_pos,row,col);
     if(chess_board->en_passant_flag){
-        can_pos[*idx].row=tmp_en_passant.row;
-        can_pos[*idx].col=tmp_en_passant.col;
-        (*idx)++;
+        can_pos_list[*can_pos_idx].row = en_passant_pos.row;
+        can_pos_list[(*can_pos_idx)++].col = en_passant_pos.col;
     }
 
-
-    int castling_idx=0;
-    coordi tmp_castling[2];
-    castling(b,row,col,tmp_castling,&castling_idx);
+    /* check if selected piece can do castling */
+    int castling_pos_idx = 0;
+    Coordi castling_pos_list[2];
+    getCanCastlingPosition(chess_board,row,col,castling_pos_list,&castling_pos_idx);
     if(chess_board->castling_flag){
-        for(int i=0;i<castling_idx;i++){
-            can_pos[*idx].row=tmp_castling[i].row;
-            can_pos[*idx].col=tmp_castling[i].col;
-            (*idx)++;
+        for(int idx = 0; idx < castling_pos_idx; idx++){
+            can_pos[*can_pos_idx].row = castling_pos_list[idx].row;
+            can_pos[(*can_pos_idx)++].col = castling_pos_list[idx].col;
         }
     }
 }
 
-void changeTurn(chess_board* b){
-    chess_board->player_turn=(chess_board->player_turn==WHITE ? BLACK : WHITE);
+void changeTurn(chess_board* chess_board){
+    chess_board->player_turn = (chess_board->player_turn == WHITE ? BLACK : WHITE);
 }
 
 /* special rules */
@@ -464,96 +469,93 @@ void promotion(){
     return;
 }
 
-void castling(chess_board* b,int row,int col,coordi* can_castling,int* idx){
-    if(chess_board->player_turn==WHITE){
-        if(row==7 && col==4 && chess_board->castling_check[4]==false){
-            if(!chess_board->castling_check[3] && forCastling(b,7,3) && forCastling(b,7,2)&& forCastling(b,7,1)){
-                can_castling[*idx].row=7;
-                can_castling[*idx].col=1;
-                (*idx)++;
+void getCanCastlingPosition(ChessBoard* chess_board,int row,int col,Coordi* can_castling_list,int* can_castling_idx){
+    /* if castling condition is satisfied, then insert satisfied piece's position to the can_castling_list */
+    if(chess_board->player_turn == WHITE){
+        if(row == 7 && col ==4  && chess_board->castling_check[4] == false){
+            if(!chess_board->castling_check[3] && canCastlingWithoutCheck(chess_board,7,3) && canCastlingWithoutCheck(chess_board,7,2) && canCastlingWithoutCheck(chess_board,7,1)){
+                can_castling_list[*can_castling_idx].row = 7;
+                can_castling_list[(*can_castling_idx)++].col = 1;
             }
-            if(!chess_board->castling_check[5] && forCastling(b,7,5) && forCastling(b,7,6)){
-                can_castling[*idx].row=7;
-                can_castling[*idx].col=6;
-                (*idx)++;
+            if(!chess_board->castling_check[5] && canCastlingWithoutCheck(chess_board,7,5) && canCastlingWithoutCheck(chess_board,7,6)){
+                can_castling_list[*can_castling_idx].row = 7;
+                can_castling_list[(*can_castling_idx)++].col = 6;
             }
         }
     }
-    else if(chess_board->player_turn==BLACK){
-        if(row==0 && col==4 && chess_board->castling_check[1]==false){
-            if(!chess_board->castling_check[0] && forCastling(b,0,3) && forCastling(b,0,2)&& forCastling(b,0,1)){
-                can_castling[*idx].row=0;
-                can_castling[*idx].col=1;
-                (*idx)++;
+    else if(chess_board->player_turn == BLACK){
+        if(row == 0 && col == 4 && chess_board->castling_check[1] == false){
+            if(!chess_board->castling_check[0] && canCastlingWithoutCheck(chess_board,0,3) && canCastlingWithoutCheck(chess_board,0,2) && canCastlingWithoutCheck(chess_board,0,1)){
+                can_castling_list[*can_castling_idx].row = 0;
+                can_castling_list[(*can_castling_idx)++].col = 1;
             }
-            if(!chess_board->castling_check[2] && forCastling(b,0,5) && forCastling(b,0,6)){
-                can_castling[*idx].row=0;
-                can_castling[*idx].col=6;
-                (*idx)++;
+            if(!chess_board->castling_check[2] && canCastlingWithoutCheck(chess_board,0,5) && canCastlingWithoutCheck(chess_board,0,6)){
+                can_castling_list[*can_castling_idx].row = 0;
+                can_castling_list[(*can_castling_idx)++].col = 6;
             }
         }
     }
 
-    if((*idx)==0) chess_board->castling_flag=false;
-    else chess_board->castling_flag=true;
+    /* update castling_flag in chess_board structure */
+    if((*can_castling_idx) == 0) chess_board->castling_flag = false;
+    else chess_board->castling_flag = true;
 }
 
-bool forCastling(chess_board* b,int r, int c){
-    int krow,kcol,kid;//king에 대한 정보
-    if(chess_board->board[r][c]!=BLANK) return false;//해당 위치에 말이 있는 경우
-    if(chess_board->player_turn==WHITE){//W_KING location
-        krow=7;
-        kcol=4;
-    }
-    else{//B_KING location
-        krow=0;
-        kcol=4;
-    }
+bool canCastlingWithoutCheck(ChessBoard* chess_board,int row, int col){
+    bool castling_flag = true;
+    int king_id, king_row, king_col = 4;//king's information
 
-    //해당 위치로 왕 이동
-    chess_board->board[r][c]=chess_board->board[krow][kcol];
-    kid=chess_board->board[krow][kcol];
-    chess_board->board[krow][kcol]=BLANK;
+    /* if [row][col] is already any other piece, cannot do castling */
+    if(chess_board->board[row][col] != BLANK) return false;
 
-    if(isCheck(b)){//체크가 된다면 원상복구
-        chess_board->board[r][c]=BLANK;
-        chess_board->board[krow][kcol]=kid;
-        return false;
-    }
-    //원상복구
-    chess_board->board[r][c]=BLANK;
-    chess_board->board[krow][kcol]=kid;
-    return true;
+    /* find king's position */
+    if(chess_board->player_turn == WHITE) king_row = 7;
+    else king_row = 0;
+
+    /* move king to the [row][col] */
+    chess_board->board[row][col] = chess_board->board[king_row][king_col];
+    chess_board->board[king_row][king_col] = BLANK;
+    king_id = chess_board->board[king_row][king_col];
+
+    /* if moved position makes check, then cannot do castling */
+    if(isCheck(chess_board)) castling_flag = false;
+    
+    /* restore the position */
+    chess_board->board[row][col] = BLANK;
+    chess_board->board[king_row][king_col] = king_id;
+
+    return castling_flag;
 }
 
-void enPassant(chess_board* b,coordi* tmp,int last_row,int last_col){
-    if(chess_board->player_turn==WHITE){
-        if(chess_board->last_move[0]==1&&chess_board->last_move[2]==3&&chess_board->last_move[4]==B_PAWN){//마지막으로 움직임이 적팀 폰이 앞으로 두칸
-            if(last_row==3 && abs(last_col-(chess_board->last_move[3]))==1){
-                chess_board->en_passant_flag=true;
-                tmp->row=last_row-1;
-                tmp->col=chess_board->last_move[3];
-                return;
-            }
+void canEnPassant(ChessBoard* chess_board,Coordi* en_passant_pos,int last_row,int last_col){
+    /* check if WHITE's piece satisfy en_passant condition */
+    if(chess_board->player_turn == WHITE){
+        if(chess_board->last_move[0] == 1 && chess_board->last_move[2] == 3 \
+        && chess_board->last_move[4] == B_PAWN && last_row == 3 \
+        && abs(last_col - (chess_board->last_move[3])) == 1){
+            chess_board->en_passant_flag = true;
+            en_passant_pos->row = last_row-1;
+            en_passant_pos->col = chess_board->last_move[3];
         }
     }
-    else if(chess_board->player_turn==BLACK){
-        if(chess_board->last_move[0]==6&&chess_board->last_move[2]==4&&chess_board->last_move[4]==W_PAWN){//마지막으로 움직임이 적팀 폰이 앞으로 두칸
-            if(last_row==4 && abs(last_col-(chess_board->last_move[3]))==1){
-                chess_board->en_passant_flag=true;
-                tmp->row=last_row+1;
-                tmp->col=chess_board->last_move[3];
-                return;
-            }
+    /* check if BLACK's piece satisfy en_passant condition */
+    else if(chess_board->player_turn == BLACK){
+        if(chess_board->last_move[0] == 6 && chess_board->last_move[2] == 4  \
+        && chess_board->last_move[4] == W_PAWN && last_row == 4 \
+        && abs(last_col - (chess_board->last_move[3])) == 1){
+            chess_board->en_passant_flag = true;
+            en_passant_pos->row = last_row+1;
+            en_passant_pos->col = chess_board->last_move[3];
         }
     }
-    chess_board->en_passant_flag=false;
+    else{
+        chess_board->en_passant_flag=false;
+    }
 }
 
-
-bool isInMoveablePosition(int finish_row,int finish_col,coordi *movealbe_pos,int moveable_idx){
-    for(int i=0;i<moveable_idx;i++){
-        if(movealbe_pos[i].row==finish_row && movealbe_pos[i].col==finish_col) return true;
+bool isInMoveablePosition(int finish_row,int finish_col,Coordi *movealbe_pos,int moveable_idx){
+    for(int idx = 0; idx < moveable_idx; i++){
+        if(movealbe_pos[idx].row == finish_row && movealbe_pos[idx].col == finish_col) return true;
     }
     return false;
 }

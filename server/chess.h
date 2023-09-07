@@ -109,75 +109,73 @@ bool handleKing(ChessBoard*,int,int,int,int);
 bool canMove(ChessBoard*,int,int,int,int);
 
 /**
- * implement : 말을 움직이는 함수로, 특수 규칙에 따라 추가적인 움직임 발생 가능
+ * implement : move piece from start pos to finish pos
  * input : chess_board pointer, 시작 행(int), 시작 열(int), 도착 행(int), 도착 열(int), 캐슬링 옵션(bool)
- * output : 죽은 말의 코드(int) : 죽은 말이 없을 경우 BLANK 리턴
+ * output : if there is a death piece, then return death piece's code, else return BLANK
 */
 int movePiece(ChessBoard*,int,int,int,int,bool);
 
 /**
- * implement : 죽은 말을 리스트에 추가하는 함수
- * input : chess_board pointer, 죽은 말의 코드(int)
+ * implement : addd death piece's code to the death's list
+ * input : chess_board pointer, death piece's code(int)
  * output : x
 */
 void addDeathPiece(ChessBoard*,int);
 
-/* 게임 진행 여부를 확인하는 함수들 */
+/* Functions which is checking chess game status */
 
 /**
- * implement : 해당 말의 소속을 얻는 함수
- * input : 해당 말의 정보를 담은 정수
- * output : 해당 말의 소속을 담은 정수(BLANK,BLACK,WHITE) 
+ * implement : get selected piece's color
+ * input : piece's code
+ * output : piece's color(BLANK,BLACK,WHITE) 
 */
 int getPieceColor(int);
 
 /**
- * implement : 움직이고 난 뒤, 프로모션 발생해야하는지 확인
+ * implement : after move piece, check if there is a promotion, then do promotion
  * input : chess_board pointer, 도착 행(int), 도착 열(int)
  * output : x
 */
-void afterMove(ChessBoard*,int,int);
+void afterMoveCheckPromotion(ChessBoard*,int,int);
 
 /**
- * implement : 게임이 끝나는지를 확인하는 함수
+ * implement : check if the game finish
  * input : chess_board pointer
- * output : 게임이 끝나면 true, 게임이 끝나지 않으면 false 리턴
+ * output : if game finish, then return true, else return false
 */
 bool isFinish(ChessBoard*);
 
 /**
- * implement : 현재 게임 정보를 복사하여 저장하는 함수
- * input : 복사할 chess_board pointer
- * output : 복사된 chess_board pointer
+ * implement : copy chess_board structure and return copied board pointer
+ * input : target chess_board pointer
+ * output : copied chess_board pointer
 */
 ChessBoard* copyBoard(ChessBoard*);
 
 /**
- * implement : 현재 게임 정보를 복구하는 함수
- * input : 저장할 chess_board pointer, 복사될 chess_board pointer
+ * implement : restore chess_board structure
+ * input : restored chess_board pointer, copied chess_board pointer
  * output : x
 */
 void recoverBoard(ChessBoard*,ChessBoard*);
 
 /**
- * implement : 본인의 왕이 체크 당했는지를 확인하는 함수
+ * implement : check if our king is checked
  * input : chess_board pointer
- * output : 왕이 체크당한다면 true를, 체크당하지 않았다면 false
+ * output : if checked return true, else return false
 */
 bool isCheck(ChessBoard*);
 
 /**
- * implement : 입력으로 들어온 좌표에 있는 말이 움직일 수 있는 좌표를 구하는 함수
- * input : chess_board_pointer, 말의 행(int), 말의 열(int), 좌표를 담을 coordi 리스트 주소, 좌표 리스트의 인덱스 주소
+ * implement : get movealbe position of selected piece and insert to the list 
+ * input : chess_board_pointer, 말의 행(int), 말의 열(int), Coordi list storing moveable positions, Coordi list's idx pointer
  * output : x
 */
 void getMoveablePosition(ChessBoard*,int,int,Coordi*,int*);
 
-
-
 /**
- * implement : 플레이어 순서를 바꿔줌, 턴 수 1씩 증가
- * input : chess_board pointer, game_infomation pointer
+ * implement : change turn of the player, and increase turn count
+ * input : chess_board pointer
  * output : x
 */
 void changeTurn(ChessBoard*);
@@ -186,37 +184,37 @@ void changeTurn(ChessBoard*);
 /* special rules */
 
 /**
- * implement : 
- * input :
- * output :
+ * implement : not implemented
+ * input : x
+ * output : x
 */
 void promotion();
 
 /**
- * implement : 캐슬링 할 수 있는 좌표를 구하는 함수
- * input : chess_board pointer, 행(int), 열(int), 캐슬링가능한 좌표를 담을 리스트 포인터, 리스트 개수를 나타내는 idx
+ * implement : get positions to do castling
+ * input : chess_board pointer, 행(int), 열(int), Coordi list storing castling positions, Coordi list's idx pointer
  * output : x
 */
-void castling(ChessBoard*,int,int,Coordi*,int*);
+void getCanCastlingPosition(ChessBoard*,int,int,Coordi*,int*);
 
 /**
- * implement : 캐슬링 시에 왕이 해당 위치로 이동할 수 있는지 확인하는 함수
+ * implement : check if the king can do castling without check
  * input : chess_board pointer, 도착 행(int), 도착 열(int)
- * output : 왕이 이동할 수 있다면 true, 이동할 수 없으면 false
+ * output : if king can move return true, else return false
 */
-bool forCastling(ChessBoard*,int,int);
+bool canCastlingWithoutCheck(ChessBoard*,int,int);
 
 /**
- * implement : 앙파상이 가능한지를 확인해 주는 함수
- * input : chess_board pointer, 앙파상 위치를 알려주는 좌표 pointer, 마지막 이동 열, 마지막 이동 행
+ * implement : check if the piece can do en_passant
+ * input : chess_board pointer, Coordi pointer storing en_passant position, last moved row, last moved col
  * output : x
 */
-void enPassant(ChessBoard*, Coordi*,int,int);
+void canEnPassant(ChessBoard*, Coordi*,int,int);
 
 /**
- * implement : 움직일 수 있는 좌표가 들어있는 배열에 있는지 확인하는 함수
- * input : 도착열, 도착행, 좌표가 들어간 배열, 배열의 크기
- * output : 배열 안에 있으면 true, 없으면 false
+ * implement : check if there is coordinate in the list
+ * input : finish_row, finish_col, list containing the coordinates, size of list
+ * output : if in the list return true, else return false
 */
 bool isInMoveablePosition(int,int,Coordi*,int);
 
