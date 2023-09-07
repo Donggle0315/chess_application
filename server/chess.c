@@ -305,7 +305,7 @@ bool isFinish(ChessBoard* chess_board){
         for(int col_idx = 0; col_idx < COL; col_idx++){
             if(getPieceColor(chess_board->board[row_idx][col_idx]) == current_player){
                 /* store movealbe positions of selected piece */
-                Coordi moveable_pos[64];
+                Coordinate moveable_pos[64];
                 int moveable_pos_idx = 0;
                 getMoveablePosition(chess_board,row_idx,col_idx,moveable_pos,&moveable_pos_idx);//get moveable position of selected piece
                 for(int pos_idx = 0; pos_idx < moveable_pos_idx; pos_idx++){
@@ -423,7 +423,7 @@ bool isCheck(ChessBoard* chess_board){
     return false;
 }
 
-void getMoveablePosition(ChessBoard* chess_board, int row, int col, Coordi* can_pos_list, int* can_pos_idx){
+void getMoveablePosition(ChessBoard* chess_board, int row, int col, Coordinate* can_pos_list, int* can_pos_idx){
     for(int row_idx = 0; row_idx < ROW; row_idx++){
         for(int col_idx = 0; col_idx < COL; col_idx++){
             /* check if selected piece can move [row_idx][col_idx] and it deosn't make its king be checked */
@@ -441,7 +441,7 @@ void getMoveablePosition(ChessBoard* chess_board, int row, int col, Coordi* can_
     }
 
     /* check if selected piece can do en_passant */
-    Coordi en_passant_pos;
+    Coordinate en_passant_pos;
     canEnPassant(chess_board,&en_passant_pos,row,col);
     if(chess_board->en_passant_flag){
         can_pos_list[*can_pos_idx].row = en_passant_pos.row;
@@ -450,7 +450,7 @@ void getMoveablePosition(ChessBoard* chess_board, int row, int col, Coordi* can_
 
     /* check if selected piece can do castling */
     int castling_pos_idx = 0;
-    Coordi castling_pos_list[2];
+    Coordinate castling_pos_list[2];
     getCanCastlingPosition(chess_board,row,col,castling_pos_list,&castling_pos_idx);
     if(chess_board->castling_flag){
         for(int idx = 0; idx < castling_pos_idx; idx++){
@@ -469,7 +469,7 @@ void promotion(){
     return;
 }
 
-void getCanCastlingPosition(ChessBoard* chess_board,int row,int col,Coordi* can_castling_list,int* can_castling_idx){
+void getCanCastlingPosition(ChessBoard* chess_board,int row,int col,Coordinate* can_castling_list,int* can_castling_idx){
     /* if castling condition is satisfied, then insert satisfied piece's position to the can_castling_list */
     if(chess_board->player_turn == WHITE){
         if(row == 7 && col ==4  && chess_board->castling_check[4] == false){
@@ -527,7 +527,7 @@ bool canCastlingWithoutCheck(ChessBoard* chess_board,int row, int col){
     return castling_flag;
 }
 
-void canEnPassant(ChessBoard* chess_board,Coordi* en_passant_pos,int last_row,int last_col){
+void canEnPassant(ChessBoard* chess_board,Coordinate* en_passant_pos,int last_row,int last_col){
     /* check if WHITE's piece satisfy en_passant condition */
     if(chess_board->player_turn == WHITE){
         if(chess_board->last_move[0] == 1 && chess_board->last_move[2] == 3 \
@@ -553,7 +553,7 @@ void canEnPassant(ChessBoard* chess_board,Coordi* en_passant_pos,int last_row,in
     }
 }
 
-bool isInMoveablePosition(int finish_row,int finish_col,Coordi *movealbe_pos,int moveable_idx){
+bool isInMoveablePosition(int finish_row,int finish_col,Coordinate *movealbe_pos,int moveable_idx){
     for(int idx = 0; idx < moveable_idx; i++){
         if(movealbe_pos[idx].row == finish_row && movealbe_pos[idx].col == finish_col) return true;
     }
