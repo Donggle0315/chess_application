@@ -6,6 +6,9 @@ server.c - prototypes adn definitions for Chess Aplication
 #define __SERVER_H__
 
 /* Include header files */
+<<<<<<< HEAD
+#include "structures_constants.h"
+=======
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -129,6 +132,7 @@ typedef struct SEND_INFO{
 } send_info;
 /* Prototypes of Functions */
 
+>>>>>>> 82d660c27e26f753f3136d15d8f2937a18c6640f
 
 /**
  * implement : 

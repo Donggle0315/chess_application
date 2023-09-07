@@ -5,14 +5,13 @@ room.c - prototypes adn definitions for room
 #ifndef __ROOM_H__
 #define __ROOM_H__
 
-#define ARGUMENT_NUM 5
 #define TUR 1
 #define SEL 2
 #define MOV 3
 #define ERR 4
 
+#include "structures_constants.h"
 #include "server.h"
-#include "chess.h"
 
 
 /**
@@ -76,7 +75,7 @@ void sendInfoToClient(room_option*,send_info*);
  * input : 
  * output :
 */
-void sendMoveableToClient(room_option*, send_info*,coordi*, int);
+void sendMoveableToClient(room_option*, send_info*, Coordinate*, int);
 
 /**
  * implement : 

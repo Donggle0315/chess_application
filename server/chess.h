@@ -5,6 +5,7 @@ chess.c - prototypes adn definitions for chess
 #ifndef __CHESS_H__
 #define __CHESS_H__
 
+#include "structures_constants.h"
 #include "server.h"
 #include <stdbool.h>
 
@@ -27,11 +28,6 @@ chess.c - prototypes adn definitions for chess
 #define W_PAWN      36
 #define PLAY_TIME   3000
 
-/* 게임 진행에 필요한 변수들을 저장하는 구조체 */
-typedef struct coordi{
-    int row;
-    int col;
-}coordi;
 
 
 
