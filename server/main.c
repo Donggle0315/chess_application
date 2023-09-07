@@ -1,4 +1,6 @@
+#include "structures_constants.h"
 #include "server.h"
+#include "utility.h"
 
 int main(){
 
@@ -11,8 +13,8 @@ int main(){
         return -1;
     }    
 
-    pool_client pc;
-    pool_room pr;
+    PoolClient pc;
+    PoolRoom pr;
 
     init_client_pool(&pc, listenfd);
     init_room_pool(&pr);
@@ -47,7 +49,7 @@ int main(){
 
             int error = readall(clientfd, buf, MAX_LEN);
 
-            send_info si;
+            SendInfo si;
             memset(si.send_string, 0, MAX_LEN);
             si.size = 0;
 
@@ -57,7 +59,7 @@ int main(){
                 close(clientfd);
                 pc.clientfd[i] = -1;
                 pc.has_login[i] = -1;
-                pc.conn_count--;
+                pc.connection_count--;
                 printf("closed connection: %d \n", clientfd);
 				deleteClientFromRoom(&pr,&si,clientfd);
                 continue;
