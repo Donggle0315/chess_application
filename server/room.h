@@ -26,7 +26,7 @@ int room_main(pool_client*, pool_room*, char**, int, send_info*);
  * input : 
  * output :
 */
-void start_game(room_option*, send_info*);
+void start_game(pool_room* ,room_option*, send_info*);
 
 /**
  * implement : 
@@ -40,7 +40,7 @@ void handle_SEL(room_option*,send_info*,char**);
  * input : 
  * output :
 */
-void handle_MOV(room_option*, send_info*,char**);
+void handle_MOV(pool_room* ,room_option*, send_info*,char**);
 
 /**
  * implement : 
@@ -54,7 +54,7 @@ GAME_INFORMATION* init_room();
  * input : 
  * output :
 */
-void increaseTurnCnt(GAME_INFORMATION*);
+void increaseTurnCnt(room_option*);
 
 /**
  * implement : 
@@ -84,6 +84,14 @@ void sendMoveableToClient(room_option*, send_info*, Coordinate*, int);
 */
 void sendIsMoveToClient(room_option*, send_info*,bool,bool);
 
+/**
+ * implement : 
+ * input : 
+ * output :
+*/
+void sendGameInfoToClient(room_option*, send_info*, pool_client*, int);
+
+void sendTimeOutToClient(pool_room*, room_option*, send_info*, int);
 /**
  * implement : 
  * input : 
