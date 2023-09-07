@@ -7,7 +7,6 @@ chess.c - prototypes adn definitions for chess
 
 #include "structures_constants.h"
 #include "server.h"
-#include <stdbool.h>
 
 /* macro functions */
 
