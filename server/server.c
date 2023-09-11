@@ -23,8 +23,8 @@ MYSQL *init_mysql(){
     return mysql;
 }
 
-int init_client_pool(pool_client *pc, int listenfd){
-    pc->conn_count = 0;
+int init_client_pool(PoolClient *pc, int listenfd){
+    pc->connection_count = 0;
     pc->maxfd = listenfd;
 
     FD_ZERO(&pc->read_set);
@@ -38,7 +38,7 @@ int init_client_pool(pool_client *pc, int listenfd){
     return true;
 }
 
-int init_room_pool(pool_room *pr){
+int init_room_pool(PoolRoom *pr){
     for (int i=0; i<MAX_ROOM; i++){
         pr->room[i].room_id = -1;
         pr->room[i].max_user_count = -1;
@@ -54,7 +54,7 @@ void terminate_program(MYSQL *mysql){
 }
 /* INITIALIZATION AND TERMINATION */
 
-void add_client_to_pool(pool_client *pc, int fd){
+void add_client_to_pool(PoolClient *pc, int fd){
     // find appropriate place to put index
     int i;
     (pc->nready)--;
@@ -72,7 +72,7 @@ void add_client_to_pool(pool_client *pc, int fd){
         pc->maxfd = fd;
     if(i > pc->maxi)
         pc->maxi = i;
-    (pc->conn_count)++;
+    (pc->connection_count)++;
 
     if(i==MAX_CLIENT)
         fprintf(stderr, "client number reached MAX_CLIENT");
@@ -94,7 +94,7 @@ void parseline(char *buf, char **arguments){
 
 }
 
-int handle_client(pool_client *pc, pool_room *pr, MYSQL *mysql, char buf[], int clientidx, send_info *si){
+int handle_client(PoolClient *pc, PoolRoom *pr, MYSQL *mysql, char buf[], int clientidx, SendInfo *si){
     char *arguments[32];
     int clientfd=pc->clientfd[clientidx];
     parseline(buf, arguments);
@@ -162,7 +162,7 @@ int handle_client(pool_client *pc, pool_room *pr, MYSQL *mysql, char buf[], int 
 }
 
 // login and register -> use mysql db
-int user_login(MYSQL *mysql, pool_client *pc, char  **arguments, int clientidx){
+int user_login(MYSQL *mysql, PoolClient *pc, char  **arguments, int clientidx){
     MYSQL_RES *res;
     char buf[256];
     sprintf(buf, "select * from user_login_info where id='%s'", arguments[1]);
@@ -206,7 +206,7 @@ int user_register(MYSQL *mysql, char **arguments){
     return true;
 }
 
-int fetch_information(pool_room* pr, send_info *si){
+int fetch_information(PoolRoom* pr, SendInfo *si){
     char sbuf[MAX_LEN];
     strncat(si->send_string, "FET\n", 5);
     // fetch information from room_pool
@@ -220,7 +220,7 @@ int fetch_information(pool_room* pr, send_info *si){
     return true;
 }
 
-int create_room(pool_room *pr, char **arguments, int clientfd, send_info *si){
+int create_room(PoolRoom *pr, char **arguments, int clientfd, SendInfo *si){
     int room_id = add_room_to_pool(pr, arguments);
     if(room_id == -1){
         return false;
@@ -234,7 +234,7 @@ int create_room(pool_room *pr, char **arguments, int clientfd, send_info *si){
     return true;
 }
 
-int enter_room(pool_room *pr, int room_id, int clientfd,int clientidx){
+int enter_room(PoolRoom *pr, int room_id, int clientfd,int clientidx){
     // check for errors
     if(pr->room[room_id].room_id == -1 ||
        pr->room[room_id].cur_user_count >= pr->room[room_id].max_user_count){
@@ -246,7 +246,7 @@ int enter_room(pool_room *pr, int room_id, int clientfd,int clientidx){
     return true;
 }
 
-int add_room_to_pool(pool_room *pr, char **arguments){
+int add_room_to_pool(PoolRoom *pr, char **arguments){
     int i;
     for(i=0; i<MAX_ROOM; i++){
         if(pr->room[i].room_id == -1){
@@ -276,7 +276,7 @@ int open_clientfd(){
 
     getaddrinfo(NULL, PORT, &hints, &listp);
 
-    for(p=listp; p != NULL; p->ai_next){
+    for(p=listp; p != NULL; p=p->ai_next){
         if((listenfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) < 0)
             continue;
 
@@ -297,34 +297,34 @@ int open_clientfd(){
     return listenfd;
 }
 
-void deleteClientFromRoom(pool_room* pr, send_info* si,int clientfd){
-	printf("delete client %d\n",clientfd);
-	for(int roomidx=0;roomidx<MAX_ROOM;roomidx++){
-		if(pr->room[roomidx].room_id==-1) continue;
-		//no one is in a room, deleteroom from pool_room
-		if(pr->room[roomidx].cur_user_count==0) {
-			pr->room[roomidx].room_id=-1;
-		}
-		//if one player is in a room, send FIN to the clientfd
-		if(pr->room[roomidx].cur_user_count==2){
-			if(pr->room[roomidx].player_fd[0] == clientfd){
-				si->send_fds[(si->size)++]=pr->room[roomidx].player_fd[1];
-				sprintf(si->send_string,"ROO\nFIN\nP2\n");
-				pr->room[roomidx].room_id=-1;
-			}
-			else if(pr->room[roomidx].player_fd[1] == clientfd){
-				si->send_fds[(si->size)++]=pr->room[roomidx].player_fd[0];
-				sprintf(si->send_string,"ROO\nFIN\nP1\n");
-				pr->room[roomidx].room_id=-1;
-			}
-			for(int sendidx=0; sendidx < si->size; sendidx++){
+void deleteClientFromRoom(PoolRoom* pr, SendInfo* si,int clientfd){
+    printf("delete client %d\n",clientfd);
+    for(int roomidx=0;roomidx<MAX_ROOM;roomidx++){
+        if(pr->room[roomidx].room_id==-1) continue;
+        //no one is in a room, deleteroom from PoolRoom
+        if(pr->room[roomidx].cur_user_count==0) {
+            pr->room[roomidx].room_id=-1;
+        }
+        //if one player is in a room, send FIN to the clientfd
+        if(pr->room[roomidx].cur_user_count==2){
+            if(pr->room[roomidx].player_fd[0] == clientfd){
+                si->send_fds[(si->size)++]=pr->room[roomidx].player_fd[1];
+                sprintf(si->send_string,"ROO\nFIN\nP2\n");
+                pr->room[roomidx].room_id=-1;
+            }
+            else if(pr->room[roomidx].player_fd[1] == clientfd){
+                si->send_fds[(si->size)++]=pr->room[roomidx].player_fd[0];
+                sprintf(si->send_string,"ROO\nFIN\nP1\n");
+                pr->room[roomidx].room_id=-1;
+            }
+            for(int sendidx=0; sendidx < si->size; sendidx++){
                 writeall(si->send_fds[sendidx], si->send_string, MAX_LEN);
             }
-			si->size=0;
-		}
-		else if(pr->room[roomidx].cur_user_count==1 && pr->room[roomidx].player_fd[0]== clientfd){
-			pr->room[roomidx].room_id=-1;
-		}
-		
-	}
+            si->size=0;
+        }
+        else if(pr->room[roomidx].cur_user_count==1 && pr->room[roomidx].player_fd[0]== clientfd){
+            pr->room[roomidx].room_id=-1;
+        }
+
+    }
 }

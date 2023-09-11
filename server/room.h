@@ -19,85 +19,85 @@ room.c - prototypes adn definitions for room
  * input : 
  * output :
 */
-int room_main(pool_client*, pool_room*, char**, int, send_info*);
+int room_main(PoolClient*, PoolRoom*, char**, int, SendInfo*);
 
 /**
  * implement : 
  * input : 
  * output :
 */
-void start_game(pool_room* ,room_option*, send_info*);
+void start_game(PoolRoom* ,RoomOption*, SendInfo*);
 
 /**
  * implement : 
  * input : 
  * output :
 */
-void handle_SEL(room_option*,send_info*,char**);
+void handle_SEL(RoomOption*,SendInfo*,char**);
 
 /**
  * implement : 
  * input : 
  * output :
 */
-void handle_MOV(pool_room* ,room_option*, send_info*,char**);
+void handle_MOV(PoolRoom* ,RoomOption*, SendInfo*,char**);
 
 /**
  * implement : 
  * input : 
  * output :
 */
-GAME_INFORMATION* init_room();
+GameInformation* init_room();
 
 /**
  * implement : 
  * input : 
  * output :
 */
-void increaseTurnCnt(room_option*);
+void increaseTurnCnt(RoomOption*);
 
 /**
  * implement : 
  * input : 
  * output :
 */
-void exit_room(GAME_INFORMATION*,pool_room*);
+void exit_room(GameInformation*,PoolRoom*);
 
 /**
  * implement : 
  * input : 
  * output :
 */
-void sendInfoToClient(room_option*,send_info*);
+void sendInfoToClient(RoomOption*,SendInfo*);
 
 /**
  * implement : 
  * input : 
  * output :
 */
-void sendMoveableToClient(room_option*, send_info*, Coordinate*, int);
+void sendMoveableToClient(RoomOption*, SendInfo*, Coordinate*, int);
 
 /**
  * implement : 
  * input : 
  * output :
 */
-void sendIsMoveToClient(room_option*, send_info*,bool,bool);
+void sendIsMoveToClient(RoomOption*, SendInfo*,bool,bool);
 
 /**
  * implement : 
  * input : 
  * output :
 */
-void sendGameInfoToClient(room_option*, send_info*, pool_client*, int);
+void sendGameInfoToClient(RoomOption*, SendInfo*, PoolClient*, int);
 
-void sendTimeOutToClient(pool_room*, room_option*, send_info*, int);
+void sendTimeOutToClient(PoolRoom*, RoomOption*, SendInfo*, int);
 /**
  * implement : 
  * input : 
  * output :
 */
-int add_player(GAME_INFORMATION*,int,fd_set);
+int add_player(GameInformation*,int,fd_set);
 
 /**
  * implement : 

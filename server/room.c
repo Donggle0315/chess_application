@@ -1,11 +1,11 @@
 #include "room.h"
 
-int room_main(pool_client* pc,pool_room* pr, char **arguments, int clientidx, send_info *si){
+int room_main(PoolClient* pc,PoolRoom* pr, char **arguments, int clientidx, SendInfo *si){
     int room_id = atoi(arguments[1]);
     arguments = &arguments[2];
 	int clientfd=pc->clientfd[clientidx];
 	printf("error?11\n");
-    room_option *room = &pr->room[room_id];
+    RoomOption *room = &pr->room[room_id];
     // PLY: init game, send (board info, turn)
     if(!strcmp(arguments[0], "PLY")){
         start_game(pr,room, si);
@@ -36,7 +36,7 @@ int room_main(pool_client* pc,pool_room* pr, char **arguments, int clientidx, se
 	}
 }
 
-void start_game(pool_room* pr,room_option *room, send_info *si){
+void start_game(PoolRoom* pr,RoomOption *room, SendInfo *si){
     room->gi = init_room();
 	room->gi->room_id = room->room_id;
 	
@@ -54,7 +54,7 @@ void start_game(pool_room* pr,room_option *room, send_info *si){
 	sendTimeOutToClient(pr,room,si,0);
 }
 
-void handle_SEL(room_option *room, send_info *si, char** arguments){
+void handle_SEL(RoomOption *room, SendInfo *si, char** arguments){
     //check if right player_turn
     int turn = atoi(arguments[1]);
     if(room->gi->turn != turn) {
@@ -74,7 +74,7 @@ void handle_SEL(room_option *room, send_info *si, char** arguments){
     sendMoveableToClient(room,si,movealbe_pos,moveable_idx);
 }
 
-void handle_MOV(pool_room* pr,room_option *room, send_info *si, char** arguments){
+void handle_MOV(PoolRoom* pr,RoomOption *room, SendInfo *si, char** arguments){
     //check if right player_turn
     int turn = atoi(arguments[1]);
     if(room->gi->turn != turn) {
@@ -147,7 +147,7 @@ void change_room_rule(){
 } //보류
 
 
-void increaseTurnCnt(room_option* room){
+void increaseTurnCnt(RoomOption* room){
     (room->gi->turn)++;
 	struct timeval now;
 	gettimeofday(&now,NULL);
@@ -166,12 +166,12 @@ void increaseTurnCnt(room_option* room){
 		
 }
 
-void exit_room(GAME_INFORMATION* gi,pool_room* pr){
+void exit_room(GAME_INFORMATION* gi,PoolRoom* pr){
     pr->room[gi->room_id].room_id=-1;
 	free(gi);
 }
 
-void sendInfoToClient(room_option *room, send_info *si){
+void sendInfoToClient(RoomOption *room, SendInfo *si){
     sprintf(si->send_string,"ROO\nTUR\n%d\n",room->gi->turn);
     //보드 위 정보를 저장
     for(int i=0;i<ROW;i++){
@@ -184,7 +184,7 @@ void sendInfoToClient(room_option *room, send_info *si){
     strcat(si->send_string,"\n");
 }
 
-void sendMoveableToClient(room_option *room,send_info* si, coordi* moveable_pos,int idx){
+void sendMoveableToClient(RoomOption *room,SendInfo* si, coordi* moveable_pos,int idx){
     sprintf(si->send_string,"ROO\nSEL\n%d\n",room->gi->turn);
     //좌표 정보 저장
     for(int i=0;i<idx;i++){
@@ -195,7 +195,7 @@ void sendMoveableToClient(room_option *room,send_info* si, coordi* moveable_pos,
     strcat(si->send_string,"\n");
 }
 
-void sendIsMoveToClient(room_option *room, send_info *si, bool move, bool finish){
+void sendIsMoveToClient(RoomOption *room, SendInfo *si, bool move, bool finish){
     sprintf(si->send_string,"ROO\nMOV\n%d\n",room->gi->turn);
     if(move){//이동 성공
         strcat(si->send_string,"SUC\n");
@@ -205,7 +205,7 @@ void sendIsMoveToClient(room_option *room, send_info *si, bool move, bool finish
     }
 }
 
-void sendGameInfoToClient(room_option* room, send_info* si,pool_client* pc, int clientidx){
+void sendGameInfoToClient(RoomOption* room, SendInfo* si,PoolClient* pc, int clientidx){
 	if(room->cur_user_count!=2){
     	sprintf(si->send_string,"ROO\nINF\n1\n%s\n%s\n",pc->client_info[room->player_idx[0]].user_id,"NULL");
 	}
@@ -231,7 +231,7 @@ void sendGameInfoToClient(room_option* room, send_info* si,pool_client* pc, int 
 	si->size=0;
 }
 
-void sendTimeOutToClient(pool_room* pr,room_option* room,send_info* si,int winner){
+void sendTimeOutToClient(PoolRoom* pr,RoomOption* room,SendInfo* si,int winner){
 	struct timeval now;
 	bool isFin=false;
 	gettimeofday(&now,NULL);
