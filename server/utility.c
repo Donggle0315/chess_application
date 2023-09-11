@@ -1,6 +1,5 @@
 #include "utility.h"
 
-
 // reads all content from fd
 // until you read count bytes
 // puts into buf
@@ -44,4 +43,11 @@ int writeall(int fd, char *buf, int count){
     }
 
     return 1;
+}
+
+void wrappedWriteAll(SendInfo *si){
+    for(int sendidx = 0; sendidx < si->size; sendidx++){
+        writeall(si->send_fds[sendidx], si->send_string, MAX_LEN);
+    }
+    si->size = 0;
 }

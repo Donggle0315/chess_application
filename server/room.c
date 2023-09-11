@@ -3,9 +3,10 @@
 int room_main(PoolClient* pc,PoolRoom* pr, char **arguments, int clientidx, SendInfo *si){
     int room_id = atoi(arguments[1]);
     arguments = &arguments[2];
-	int clientfd=pc->clientfd[clientidx];
-	printf("error?11\n");
+	int clientfd = pc->clientfd[clientidx];
     RoomOption *room = &pr->room[room_id];
+
+    /* compare recieved message's argument and execute matched functions */
     // PLY: init game, send (board info, turn)
     if(!strcmp(arguments[0], "PLY")){
         start_game(pr,room, si);
@@ -47,10 +48,7 @@ void start_game(PoolRoom* pr,RoomOption *room, SendInfo *si){
     si->send_fds[(si->size)++] = room->player_fd[0];
     si->send_fds[(si->size)++] = room->player_fd[1];
     sendInfoToClient(room, si);
-	for(int sendidx=0; sendidx< si->size; sendidx++){
-        writeall(si->send_fds[sendidx],si->send_string,MAX_LEN);
-    }
-	si->size=0;
+	wrappedWriteAll(si);
 	sendTimeOutToClient(pr,room,si,0);
 }
 
@@ -64,13 +62,13 @@ void handle_SEL(RoomOption *room, SendInfo *si, char** arguments){
     //get moveable poses
     int row = arguments[2][0]-'0';
     int col = arguments[2][1]-'0';
-    coordi movealbe_pos[ROW*COL];
-    int moveable_idx=0;
+    Coordi movealbe_pos[ROW*COL];
+    int moveable_idx = 0;
     getMoveablePosition(room->b,row,col,movealbe_pos,&moveable_idx);
     
     //send message to client
-    if(turn%2) si->send_fds[(si->size)++]=room->player_fd[0];
-    else si->send_fds[(si->size)++]=room->player_fd[1];
+    if(turn%2) si->send_fds[(si->size)++] = room->player_fd[0];
+    else si->send_fds[(si->size)++] = room->player_fd[1];
     sendMoveableToClient(room,si,movealbe_pos,moveable_idx);
 }
 
@@ -78,48 +76,41 @@ void handle_MOV(PoolRoom* pr,RoomOption *room, SendInfo *si, char** arguments){
     //check if right player_turn
     int turn = atoi(arguments[1]);
     if(room->gi->turn != turn) {
-		printf("in if\n");
         sendIsMoveToClient(room,si,false,false);
         return;
     }
     //if the piece can move, then move and change turn
-    int sr=arguments[2][0]-'0';
-    int sc=arguments[2][1]-'0';
-    int fr=arguments[2][2]-'0';
-    int fc=arguments[2][3]-'0';
+    int start_row = arguments[2][0]-'0';
+    int start_col = arguments[2][1]-'0';
+    int finish_row = arguments[2][2]-'0';
+    int finish_col = arguments[2][3]-'0';
     int deathCode;
-    bool flag=true;
-    //if(canMove(room->b,sr,sc,fr,fc)){
-    coordi movealbe_pos[ROW*COL];
-    int moveable_idx=0;
-    getMoveablePosition(room->b,sr,sc,movealbe_pos,&moveable_idx);
-    if(isInMoveablePosition(fr,fc,movealbe_pos,moveable_idx)){
-        deathCode=movePiece(room->b,sr,sc,fr,fc,true);
+    bool moveable_flag = true;
+    Coordi movealbe_pos[ROW*COL];
+    int moveable_idx = 0;
+    getMoveablePosition(room->b,start_row,start_col,movealbe_pos,&moveable_idx);
+    if(isInMoveablePosition(finish_row,finish_col,movealbe_pos,moveable_idx)){
+        deathCode = movePiece(room->b,start_row,start_col,finish_row,finish_col,true);
         if(deathCode) addDeathPiece(room->b,deathCode);
         increaseTurnCnt(room);
 		changeTurn(room->b);
-        
     }
     else{
-        flag=false;
+        moveable_flag = false;
     }
   
 	//check if the game finish
     bool finish = isFinish(room->b);
-	if(finish) printf("isFin is true\n");
     //send message to client
     si->size = 0;
-	if(turn%2) si->send_fds[(si->size)++]=room->player_fd[0];
-    else si->send_fds[(si->size)++]=room->player_fd[1];
-    sendIsMoveToClient(room,si,flag,finish);
-    for(int sendidx=0; sendidx< si->size; sendidx++){
-        writeall(si->send_fds[sendidx],si->send_string,MAX_LEN);
-    }
-	si->size=0;
-    si->send_fds[(si->size)++]=room->player_fd[0];
-    si->send_fds[(si->size)++]=room->player_fd[1];
+	if(turn%2) si->send_fds[(si->size)++] = room->player_fd[0];
+    else si->send_fds[(si->size)++] = room->player_fd[1];
+    sendIsMoveToClient(room,si,moveable_flag,finish);
+    wrappedWriteAll(si);
+    si->send_fds[(si->size)++] = room->player_fd[0];
+    si->send_fds[(si->size)++] = room->player_fd[1];
 	if(finish){
-		int winner=(room->b->player_turn == BLACK) ? WHITE:BLACK;
+		int winner=(room->b->player_turn == BLACK) ? WHITE : BLACK;
 		sendTimeOutToClient(pr,room,si,winner);
 	}
     else{
@@ -127,14 +118,14 @@ void handle_MOV(PoolRoom* pr,RoomOption *room, SendInfo *si, char** arguments){
 	}
 }
 
-GAME_INFORMATION* init_room(){
-    GAME_INFORMATION* gi=(GAME_INFORMATION*)malloc(sizeof(GAME_INFORMATION));
+GameInformation* init_room(){
+    GameInformation* gi=(GameInformation*)malloc(sizeof(GameInformation));
     gi->turn=1;
 
     return gi;
 }
 
-int add_player(GAME_INFORMATION* gi,int connfd,fd_set read_set){
+int add_player(GameInformation* gi,int connfd,fd_set read_set){
 
 }
 
@@ -153,7 +144,6 @@ void increaseTurnCnt(RoomOption* room){
 	gettimeofday(&now,NULL);
 	
 	double time_diff = (now.tv_sec - room->gi->prev_time.tv_sec);
-	printf("time_diff %lf\n",time_diff);
 	
 	if(room->b->player_turn==WHITE){
 		room->b->p1_time -= (int)time_diff;
@@ -161,35 +151,33 @@ void increaseTurnCnt(RoomOption* room){
 	else{
 		room->b->p2_time -= (int)time_diff;
 	}
-	room->gi->prev_time=now;
-	printf("white : %d\nblack : %d",room->b->p1_time, room->b->p2_time);
-		
+	room->gi->prev_time = now;		
 }
 
-void exit_room(GAME_INFORMATION* gi,PoolRoom* pr){
-    pr->room[gi->room_id].room_id=-1;
+void exit_room(GameInformation* gi,PoolRoom* pr){
+    pr->room[gi->room_id].room_id = -1;
 	free(gi);
 }
 
 void sendInfoToClient(RoomOption *room, SendInfo *si){
     sprintf(si->send_string,"ROO\nTUR\n%d\n",room->gi->turn);
-    //보드 위 정보를 저장
-    for(int i=0;i<ROW;i++){
-        for(int j=0;j<COL;j++){
+    //store board information
+    for(int row_idx = 0; row_idx < ROW; row_idx++){
+        for(int col_idx = 0; col_idx < COL; col_idx++){
             char piece[3];
-            sprintf(piece,"%02d",room->b->board[i][j]);
+            sprintf(piece,"%02d",room->b->board[row_idx][col_idx]);
             strcat(si->send_string,piece);
         }
     }
     strcat(si->send_string,"\n");
 }
 
-void sendMoveableToClient(RoomOption *room,SendInfo* si, coordi* moveable_pos,int idx){
+void sendMoveableToClient(RoomOption *room,SendInfo* si, Coordi* moveable_pos,int moveable_idx){
     sprintf(si->send_string,"ROO\nSEL\n%d\n",room->gi->turn);
     //좌표 정보 저장
-    for(int i=0;i<idx;i++){
+    for(int idx = 0; idx < moveable_idx; idx++){
         char pos[6];
-        sprintf(pos,"%d%d",moveable_pos[i].row,moveable_pos[i].col);
+        sprintf(pos,"%d%d",moveable_pos[idx].row,moveable_pos[idx].col);
         strcat(si->send_string,pos);
     }
     strcat(si->send_string,"\n");
@@ -206,63 +194,48 @@ void sendIsMoveToClient(RoomOption *room, SendInfo *si, bool move, bool finish){
 }
 
 void sendGameInfoToClient(RoomOption* room, SendInfo* si,PoolClient* pc, int clientidx){
-	if(room->cur_user_count!=2){
+	if(room->cur_user_count != 2){
     	sprintf(si->send_string,"ROO\nINF\n1\n%s\n%s\n",pc->client_info[room->player_idx[0]].user_id,"NULL");
 	}
 	else{
 		sprintf(si->send_string,"ROO\nINF\n1\n%s\n%s\n",pc->client_info[room->player_idx[0]].user_id,pc->client_info[room->player_idx[1]].user_id);
 	}
-	printf("%s\n",si->send_string);
     si->send_fds[(si->size)++]=room->player_fd[0];
-    // int enemy_idx=room->player_idx[1];
-    // strcat(si->send_string,pc->client_info[enemy_idx].user_id);
-    for(int sendidx=0; sendidx< si->size; sendidx++){
-        writeall(si->send_fds[sendidx],si->send_string,MAX_LEN);
-    }
-	si->size=0;
-    if(room->cur_user_count!=2) return;
+
+    wrappedWriteAll(si);
+    if(room->cur_user_coun != 2) return;
     sprintf(si->send_string,"ROO\nINF\n0\n%s\n%s\n",pc->client_info[room->player_idx[0]].user_id,pc->client_info[room->player_idx[1]].user_id);
-    // enemy_idx=room->player_idx[0];
-    // strcat(si->send_string,pc->client_info[enemy_idx].user_id);
-    si->send_fds[(si->size)++]=room->player_fd[1];
-    for(int sendidx=0; sendidx< si->size; sendidx++){
-        writeall(si->send_fds[sendidx],si->send_string,MAX_LEN);
-    }
-	si->size=0;
+    si->send_fds[(si->size)++] = room->player_fd[1];
+    wrappedWriteAll(si);
 }
 
 void sendTimeOutToClient(PoolRoom* pr,RoomOption* room,SendInfo* si,int winner){
 	struct timeval now;
-	bool isFin=false;
+	bool isFinish = false;
 	gettimeofday(&now,NULL);
 	double time_diff = (now.tv_sec - room->gi->prev_time.tv_sec);
-	if(room->b->player_turn==WHITE){
+	if(room->b->player_turn == WHITE){
 		room->b->p1_time -= (int)time_diff;
 	}
 	else{
 		room->b->p2_time -= (int)time_diff;
 	}
-	room->gi->prev_time=now;
-	if(room->b->p1_time <=0 || winner==BLACK) {
+	room->gi->prev_time = now;
+	if(room->b->p1_time <= 0 || winner == BLACK) {
 	    sprintf(si->send_string,"ROO\nFIN\nP2\n");
-		isFin=true;
+		isFinish = true;
 	}
-	else if(room->b->p2_time<=0 || winner==WHITE){
+	else if(room->b->p2_time <= 0 || winner == WHITE){
 		sprintf(si->send_string,"ROO\nFIN\nP1\n");
-		isFin=true;
+		isFinish = true;
 	}
-	else if(winner ==0){
+	else if(winner == 0){
 		sprintf(si->send_string,"ROO\nRES\n%d\n%d\n",room->b->p1_time, room->b->p2_time);		
 	}
-	si->size=0;
-	si->send_fds[(si->size)++]=room->player_fd[0];
-	si->send_fds[(si->size)++]=room->player_fd[1];
-    for(int sendidx=0; sendidx< si->size; sendidx++){
-        writeall(si->send_fds[sendidx],si->send_string,MAX_LEN);
-    }
-	si->size=0;
-	if(isFin){
-		printf("isFin\n");
+	si->send_fds[(si->size)++] = room->player_fd[0];
+	si->send_fds[(si->size)++] = room->player_fd[1];
+    wrappedWriteAll(si);
+	if(isFinish){
 		finishGame(room->b);
         exit_room(room->gi, pr);
 	}

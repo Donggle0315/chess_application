@@ -317,10 +317,7 @@ void deleteClientFromRoom(PoolRoom* pr, SendInfo* si,int clientfd){
                 sprintf(si->send_string,"ROO\nFIN\nP1\n");
                 pr->room[roomidx].room_id=-1;
             }
-            for(int sendidx=0; sendidx < si->size; sendidx++){
-                writeall(si->send_fds[sendidx], si->send_string, MAX_LEN);
-            }
-            si->size=0;
+            wrappedWriteAll(si);
         }
         else if(pr->room[roomidx].cur_user_count==1 && pr->room[roomidx].player_fd[0]== clientfd){
             pr->room[roomidx].room_id=-1;
