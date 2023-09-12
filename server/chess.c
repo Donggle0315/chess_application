@@ -377,7 +377,7 @@ void recoverBoard(ChessBoard* original_board, ChessBoard* chess_board){
     original_board->promotion_r = chess_board->promotion_r;
     original_board->promotion_c = chess_board->promotion_c;
 
-    for(int idx = 0; idx<6; idx++){
+    for(int idx = 0; idx < 6; idx++){
         original_board->castling_check[idx] = chess_board->castling_check[idx];
     }
     original_board->castling_flag = chess_board->castling_flag;

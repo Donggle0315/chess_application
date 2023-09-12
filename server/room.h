@@ -19,35 +19,35 @@ room.c - prototypes adn definitions for room
  * input : 
  * output :
 */
-int room_main(PoolClient*, PoolRoom*, char**, int, SendInfo*);
+int roomMain(PoolClient*, PoolRoom*, char**, int, SendInfo*);
 
 /**
  * implement : 
  * input : 
  * output :
 */
-void start_game(PoolRoom* ,RoomOption*, SendInfo*);
+void startGame(PoolRoom* ,RoomOption*, SendInfo*);
 
 /**
  * implement : 
  * input : 
  * output :
 */
-void handle_SEL(RoomOption*,SendInfo*,char**);
+void handleSEL(RoomOption*,SendInfo*,char**);
 
 /**
  * implement : 
  * input : 
  * output :
 */
-void handle_MOV(PoolRoom* ,RoomOption*, SendInfo*,char**);
+void handleMOV(PoolRoom* ,RoomOption*, SendInfo*,char**);
 
 /**
  * implement : 
  * input : 
  * output :
 */
-GameInformation* init_room();
+GameInformation* initRoom();
 
 /**
  * implement : 
@@ -61,7 +61,7 @@ void increaseTurnCnt(RoomOption*);
  * input : 
  * output :
 */
-void exit_room(GameInformation*,PoolRoom*);
+void exitRoom(GameInformation*,PoolRoom*);
 
 /**
  * implement : 
@@ -97,20 +97,20 @@ void sendTimeOutToClient(PoolRoom*, RoomOption*, SendInfo*, int);
  * input : 
  * output :
 */
-int add_player(GameInformation*,int,fd_set);
+int addPlayer(GameInformation*,int,fd_set);
 
 /**
  * implement : 
  * input : 
  * output :
 */
-void change_player_role();
+void changePlayerRole();
 
 /**
  * implement : 
  * input : 
  * output :
 */
-void change_room_rule();
+void changeRoomRule();
 
 #endif

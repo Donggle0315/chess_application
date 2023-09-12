@@ -6,9 +6,9 @@ int main(){
 
     // initialize MYSQL struct
     MYSQL *mysql;
-    mysql = init_mysql();
+    mysql = initMysql();
 
-    int listenfd = open_clientfd();
+    int listenfd = openClientfd();
     if(listenfd == -1){
         return -1;
     }    
@@ -16,8 +16,8 @@ int main(){
     PoolClient pc;
     PoolRoom pr;
 
-    init_client_pool(&pc, listenfd);
-    init_room_pool(&pr);
+    initClientPool(&pc, listenfd);
+    initRoomPool(&pr);
 
     struct sockaddress_storage *clientaddr;
     socklen_t clientlen = sizeof(struct sockaddr_storage);
@@ -36,7 +36,7 @@ int main(){
         // handle events
         if(FD_ISSET(listenfd, &pc.ready_set)){
             int connfd = accept(listenfd, (SA*)clientaddr, &clientlen);
-            add_client_to_pool(&pc, connfd);
+            addClientToPool(&pc, connfd);
             fprintf(stdout, "added client in fd: %d\n", connfd);
         }
 
@@ -64,13 +64,11 @@ int main(){
 				deleteClientFromRoom(&pr,&si,clientfd);
                 continue;
             }
-            if(handle_client(&pc, &pr, mysql, buf, i, &si)){
+            if(handleClient(&pc, &pr, mysql, buf, i, &si)){
                 wrappedWriteAll(si);
             }            
         }
     }
-
-
-    //terminate_program(mysql);
+    //terminateProgram(mysql);
     return 0;
 }

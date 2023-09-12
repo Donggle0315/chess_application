@@ -166,7 +166,7 @@ bool isCheck(ChessBoard*);
  * input : chess_board_pointer, 말의 행(int), 말의 열(int), Coordi list storing moveable positions, Coordi list's idx pointer
  * output : x
 */
-void getMoveablePosition(ChessBoard*,int,int,Coordi*,int*);
+void getMoveablePosition(ChessBoard*,int,int,Coordinate*,int*);
 
 /**
  * implement : change turn of the player, and increase turn count
@@ -190,7 +190,7 @@ void promotion();
  * input : chess_board pointer, 행(int), 열(int), Coordi list storing castling positions, Coordi list's idx pointer
  * output : x
 */
-void getCanCastlingPosition(ChessBoard*,int,int,Coordi*,int*);
+void getCanCastlingPosition(ChessBoard*,int,int,Coordinate*,int*);
 
 /**
  * implement : check if the king can do castling without check
@@ -204,13 +204,13 @@ bool canCastlingWithoutCheck(ChessBoard*,int,int);
  * input : chess_board pointer, Coordi pointer storing en_passant position, last moved row, last moved col
  * output : x
 */
-void canEnPassant(ChessBoard*, Coordi*,int,int);
+void canEnPassant(ChessBoard*, Coordinate*,int,int);
 
 /**
  * implement : check if there is coordinate in the list
  * input : finish_row, finish_col, list containing the coordinates, size of list
  * output : if in the list return true, else return false
 */
-bool isInMoveablePosition(int,int,Coordi*,int);
+bool isInMoveablePosition(int,int,Coordinate*,int);
 
 #endif
