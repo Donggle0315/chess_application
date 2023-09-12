@@ -49,5 +49,6 @@ void wrappedWriteAll(SendInfo *si){
     for(int sendidx = 0; sendidx < si->size; sendidx++){
         writeall(si->send_fds[sendidx], si->send_string, MAX_LEN);
     }
+    //clear SendInfo instances
     si->size = 0;
 }
