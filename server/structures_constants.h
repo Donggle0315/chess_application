@@ -68,6 +68,8 @@ typedef struct {
 typedef struct {
     int player[MAX_PLAYER_NUM];
     int turn;//몇번째 플레이어가 플레이할 차례인지
+    int room_id;
+    struct timeval prev_time;
 }GameInformation;
 
 typedef struct {
@@ -87,7 +89,7 @@ typedef struct {
     int promotion_c;
     bool castling_check[6];
     bool castling_flag;
-    bool last_move[5];
+    int last_move[5];
     bool en_passant_flag;
 
     // Time left for each player (sec)

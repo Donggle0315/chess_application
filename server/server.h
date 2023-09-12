@@ -7,7 +7,7 @@ server.c - prototypes adn definitions for Chess Aplication
 
 /* Include header files */
 #include "structures_constants.h"
-
+#include "utility.h"
 /**
  * implement : 
  * input : void

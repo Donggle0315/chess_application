@@ -65,7 +65,7 @@ int main(){
                 continue;
             }
             if(handleClient(&pc, &pr, mysql, buf, i, &si)){
-                wrappedWriteAll(si);
+                wrappedWriteAll(&si);
             }            
         }
     }

@@ -28,7 +28,7 @@ ChessBoard* initBoard(){
     chess_board->board[7][4] = W_KING;
     
     /* init array which store death pieces */
-    for(int death_idx = 0; death_idx < PEICE_CNT; death_idx++){
+    for(int death_idx = 0; death_idx < PIECE_CNT; death_idx++){
         chess_board->white_death[death_idx] = chess_board->black_death[death_idx] = BLANK;
     }
 
@@ -39,7 +39,7 @@ ChessBoard* initBoard(){
     chess_board->castling_flag = false;
     chess_board->en_passant_flag = false;
     for(int last_move_idx = 0; last_move_idx < 4; last_move_idx++){
-        chess_board->last_move[last_move_idx] = false;
+        chess_board->last_move[last_move_idx] = 0;
     }
 
     return chess_board;
@@ -240,7 +240,7 @@ int movePiece(ChessBoard* chess_board,int start_row,int start_col, int finish_ro
 
     /* if a piece kills enemy piece, store the dead piece into deathcode variable */
     if(getPieceColor(chess_board->board[finish_row][finish_col]) != BLANK) {
-        deathCode = chess_board->board[finish_row][finish_col];
+        death_code = chess_board->board[finish_row][finish_col];
     }
 
     /* move selected piece */
@@ -263,17 +263,17 @@ int movePiece(ChessBoard* chess_board,int start_row,int start_col, int finish_ro
         else if(start_row == 7 && start_col == 7) chess_board->castling_check[5] = true;//RIGHT B_ROOK
     }
 
-    return deathCode;
+    return death_code;
 }   
 
-void addDeathPiece(ChessBoard *chess_board, int deathCode){
+void addDeathPiece(ChessBoard *chess_board, int death_code){
     int enemy_player = (chess_board->player_turn == WHITE) ? BLACK : WHITE;
     if(enemy_player == WHITE){
-        chess_board->white_death[chess_board->w_death_idx] = deathCode;
+        chess_board->white_death[chess_board->w_death_idx] = death_code;
         (chess_board->w_death_idx)++;
     }
     else if(enemy_player == BLACK){
-        chess_board->black_death[chess_board->b_death_idx] = deathCode;
+        chess_board->black_death[chess_board->b_death_idx] = death_code;
         (chess_board->b_death_idx)++;
     }
 }
@@ -312,7 +312,7 @@ bool isFinish(ChessBoard* chess_board){
                     ChessBoard* copy_board = copyBoard(chess_board);//store original board
                     int tmp_death_code = movePiece(chess_board,row_idx,col_idx,moveable_pos[pos_idx].row,moveable_pos[pos_idx].col,false);
                     if(!isCheck(chess_board)) finish_flag = false;//this game is not finished
-                    recover_board(chess_board,copy_board);//restore original board
+                    recoverBoard(chess_board,copy_board);//restore original board
                 }
                 if(!finish_flag) return false;//player can move a piece
             }
@@ -329,7 +329,7 @@ ChessBoard* copyBoard(ChessBoard* chess_board){
             copy_board->board[row_idx][col_idx] = chess_board->board[row_idx][col_idx];
         }
     }
-    for(int idx = 0; idx < PEICE_CNT; idx++){
+    for(int idx = 0; idx < PIECE_CNT; idx++){
         copy_board->white_death[idx] = chess_board->white_death[idx];
         copy_board->black_death[idx] = chess_board->black_death[idx];
     }
@@ -351,10 +351,10 @@ ChessBoard* copyBoard(ChessBoard* chess_board){
         copy_board->last_move[idx] = chess_board->last_move[idx];
     }
     copy_board->en_passant_flag = chess_board->en_passant_flag;
-    copy_board->p2_time = chess_board->p2_time;
-    copy_board->p1_time = chess_board->p1_time;
+    copy_board->black_time = chess_board->black_time;
+    copy_board->white_time = chess_board->white_time;
 
-    return copyBoard;
+    return copy_board;
 }
 
 void recoverBoard(ChessBoard* original_board, ChessBoard* chess_board){
@@ -363,7 +363,7 @@ void recoverBoard(ChessBoard* original_board, ChessBoard* chess_board){
             original_board->board[row_idx][col_idx] = chess_board->board[row_idx][col_idx];
         }
     }
-    for(int idx = 0; idx < PEICE_CNT; idx++){
+    for(int idx = 0; idx < PIECE_CNT; idx++){
         original_board->white_death[idx] = chess_board->white_death[idx];
         original_board->black_death[idx] = chess_board->black_death[idx];
     }
@@ -385,8 +385,8 @@ void recoverBoard(ChessBoard* original_board, ChessBoard* chess_board){
         original_board->last_move[idx] = chess_board->last_move[idx];
     }
     original_board->en_passant_flag = chess_board->en_passant_flag;
-    original_board->p2_time = chess_board->p2_time;
-    original_board->p1_time = chess_board->p1_time;
+    original_board->black_time = chess_board->black_time;
+    original_board->white_time = chess_board->white_time;
 
 }
 
@@ -398,7 +398,7 @@ bool isCheck(ChessBoard* chess_board){
     /* find current player's king's position */
     for(int row_idx = 0; row_idx < ROW; row_idx++){
         for(int col_idx = 0; col_idx < COL; col_idx++){
-            if(chess_board->board[i][j] % 10 == 5 && getPieceColor(chess_board->board[row_idx][col_idx]) == current_player){//자신의 왕일 때
+            if(chess_board->board[row_idx][col_idx] % 10 == 5 && getPieceColor(chess_board->board[row_idx][col_idx]) == current_player){//자신의 왕일 때
                 king_row = row_idx;
                 king_col = col_idx;
             }
@@ -428,12 +428,12 @@ void getMoveablePosition(ChessBoard* chess_board, int row, int col, Coordinate* 
         for(int col_idx = 0; col_idx < COL; col_idx++){
             /* check if selected piece can move [row_idx][col_idx] and it deosn't make its king be checked */
             if(canMove(chess_board,row,col,row_idx,col_idx)){
-                chess_board* copy_board = copyBoard(chess_board);
+                ChessBoard* copy_board = copyBoard(chess_board);
                 int tmp_deate_code = movePiece(chess_board,row,col,row_idx,col_idx,false);
                 if(!isCheck(chess_board)){
                     /* add moveable position */
-                    can_pos_list[*can_pos_idx].row = i;
-                    can_pos_list[(*can_pos_idx)++].col = j;
+                    can_pos_list[*can_pos_idx].row = row_idx;
+                    can_pos_list[(*can_pos_idx)++].col = col_idx;
                 }
                 recoverBoard(chess_board,copy_board);
             }
@@ -454,13 +454,13 @@ void getMoveablePosition(ChessBoard* chess_board, int row, int col, Coordinate* 
     getCanCastlingPosition(chess_board,row,col,castling_pos_list,&castling_pos_idx);
     if(chess_board->castling_flag){
         for(int idx = 0; idx < castling_pos_idx; idx++){
-            can_pos[*can_pos_idx].row = castling_pos_list[idx].row;
-            can_pos[(*can_pos_idx)++].col = castling_pos_list[idx].col;
+            can_pos_list[*can_pos_idx].row = castling_pos_list[idx].row;
+            can_pos_list[(*can_pos_idx)++].col = castling_pos_list[idx].col;
         }
     }
 }
 
-void changeTurn(chess_board* chess_board){
+void changeTurn(ChessBoard* chess_board){
     chess_board->player_turn = (chess_board->player_turn == WHITE ? BLACK : WHITE);
 }
 
@@ -554,7 +554,7 @@ void canEnPassant(ChessBoard* chess_board,Coordinate* en_passant_pos,int last_ro
 }
 
 bool isInMoveablePosition(int finish_row,int finish_col,Coordinate *movealbe_pos,int moveable_idx){
-    for(int idx = 0; idx < moveable_idx; i++){
+    for(int idx = 0; idx < moveable_idx; idx++){
         if(movealbe_pos[idx].row == finish_row && movealbe_pos[idx].col == finish_col) return true;
     }
     return false;

@@ -1,9 +1,10 @@
 #include "room.h"
+#include "chess.h"
 
 int roomMain(PoolClient* pc,PoolRoom* pr, char **arguments, int clientidx, SendInfo *si){
     int room_id = atoi(arguments[1]);
     arguments = &arguments[2];
-	int clientfd = pc->clientfd[clientidx];
+    int clientfd = pc->clientfd[clientidx];
     RoomOption *room = &pr->room[room_id];
 
     /* compare recieved message's argument and execute matched functions */
@@ -30,26 +31,27 @@ int roomMain(PoolClient* pc,PoolRoom* pr, char **arguments, int clientidx, SendI
         exitRoom(room->gi, pr);
     }
     else if(!strcmp(arguments[0], "INF")){
-        sendGameInfoToClient(room,si,pc,clientidx);
+	sendGameInfoToClient(room,si,pc,clientidx);
     }
-	else if(!strcmp(arguments[0], "CHK")){
-		sendTimeOutToClient(pr,room,si,0);
-	}
+    else if(!strcmp(arguments[0], "CHK")){
+	sendTimeOutToClient(pr,room,si,0);
+    }
+    return 1;
 }
 
 void startGame(PoolRoom* pr,RoomOption *room, SendInfo *si){
     room->gi = initRoom();
-	room->gi->room_id = room->room_id;
+    room->gi->room_id = room->room_id;
 	
     room->b = initBoard();
-    room->b->p1_time = room->time;
-	room->b->p2_time = room->time;
-	gettimeofday(&room->gi->prev_time,NULL);
+    room->b->white_time = room->time;
+    room->b->black_time = room->time;
+    gettimeofday(&room->gi->prev_time,NULL);
     si->send_fds[(si->size)++] = room->player_fd[0];
     si->send_fds[(si->size)++] = room->player_fd[1];
     sendInfoToClient(room, si);
-	wrappedWriteAll(si);
-	sendTimeOutToClient(pr,room,si,0);
+    wrappedWriteAll(si);
+    sendTimeOutToClient(pr,room,si,0);
 }
 
 void handleSEL(RoomOption *room, SendInfo *si, char** arguments){
@@ -98,24 +100,25 @@ void handleMOV(PoolRoom* pr,RoomOption *room, SendInfo *si, char** arguments){
     else{
         moveable_flag = false;
     }
-  
-	//check if the game finish
+
+    //check if the game finish
     bool finish = isFinish(room->b);
     //send message to client
     si->size = 0;
-	if(turn%2) si->send_fds[(si->size)++] = room->player_fd[0];
+    if(turn%2) si->send_fds[(si->size)++] = room->player_fd[0];
     else si->send_fds[(si->size)++] = room->player_fd[1];
+
     sendIsMoveToClient(room,si,moveable_flag,finish);
     wrappedWriteAll(si);
     si->send_fds[(si->size)++] = room->player_fd[0];
     si->send_fds[(si->size)++] = room->player_fd[1];
-	if(finish){
-		int winner=(room->b->player_turn == BLACK) ? WHITE : BLACK;
-		sendTimeOutToClient(pr,room,si,winner);
-	}
+    if(finish){
+	int winner=(room->b->player_turn == BLACK) ? WHITE : BLACK;
+	sendTimeOutToClient(pr,room,si,winner);
+    }
     else{
-		sendInfoToClient(room, si);
-	}
+	sendInfoToClient(room, si);
+    }
 }
 
 GameInformation* initRoom(){
@@ -140,23 +143,23 @@ void changeRoomRule(){
 
 void increaseTurnCnt(RoomOption* room){
     (room->gi->turn)++;
-	struct timeval now;
-	gettimeofday(&now,NULL);
-	
-	double time_diff = (now.tv_sec - room->gi->prev_time.tv_sec);
-	
-	if(room->b->player_turn == WHITE){
-		room->b->p1_time -= (int)time_diff;
-	}
-	else{
-		room->b->p2_time -= (int)time_diff;
-	}
-	room->gi->prev_time = now;		
+    struct timeval now;
+    gettimeofday(&now,NULL);
+
+    double time_diff = (now.tv_sec - room->gi->prev_time.tv_sec);
+
+    if(room->b->player_turn == WHITE){
+	room->b->white_time -= (int)time_diff;
+    }
+    else{
+	room->b->black_time -= (int)time_diff;
+    }
+    room->gi->prev_time = now;		
 }
 
 void exitRoom(GameInformation* gi,PoolRoom* pr){
     pr->room[gi->room_id].room_id = -1;
-	free(gi);
+    free(gi);
 }
 
 void sendInfoToClient(RoomOption *room, SendInfo *si){
@@ -194,49 +197,49 @@ void sendIsMoveToClient(RoomOption *room, SendInfo *si, bool move, bool finish){
 }
 
 void sendGameInfoToClient(RoomOption* room, SendInfo* si,PoolClient* pc, int clientidx){
-	if(room->cur_user_count != 2){
-    	sprintf(si->send_string,"ROO\nINF\n1\n%s\n%s\n",pc->client_info[room->player_idx[0]].user_id,"NULL");
-	}
-	else{
-		sprintf(si->send_string,"ROO\nINF\n1\n%s\n%s\n",pc->client_info[room->player_idx[0]].user_id,pc->client_info[room->player_idx[1]].user_id);
-	}
+    if(room->cur_user_count != 2){
+	sprintf(si->send_string,"ROO\nINF\n1\n%s\n%s\n",pc->client_info[room->player_idx[0]].user_id,"NULL");
+    }
+    else{
+	sprintf(si->send_string,"ROO\nINF\n1\n%s\n%s\n",pc->client_info[room->player_idx[0]].user_id,pc->client_info[room->player_idx[1]].user_id);
+    }
     si->send_fds[(si->size)++] = room->player_fd[0];
 
     wrappedWriteAll(si);
-    if(room->cur_user_coun != 2) return;
+    if(room->cur_user_count != 2) return;
     sprintf(si->send_string,"ROO\nINF\n0\n%s\n%s\n",pc->client_info[room->player_idx[0]].user_id,pc->client_info[room->player_idx[1]].user_id);
     si->send_fds[(si->size)++] = room->player_fd[1];
     wrappedWriteAll(si);
 }
 
 void sendTimeOutToClient(PoolRoom* pr,RoomOption* room,SendInfo* si,int winner){
-	struct timeval now;
-	bool isFinish = false;
-	gettimeofday(&now,NULL);
-	double time_diff = (now.tv_sec - room->gi->prev_time.tv_sec);
-	if(room->b->player_turn == WHITE){
-		room->b->p1_time -= (int)time_diff;
-	}
-	else{
-		room->b->p2_time -= (int)time_diff;
-	}
-	room->gi->prev_time = now;
-	if(room->b->p1_time <= 0 || winner == BLACK) {
-	    sprintf(si->send_string,"ROO\nFIN\nP2\n");
-		isFinish = true;
-	}
-	else if(room->b->p2_time <= 0 || winner == WHITE){
-		sprintf(si->send_string,"ROO\nFIN\nP1\n");
-		isFinish = true;
-	}
-	else if(winner == 0){
-		sprintf(si->send_string,"ROO\nRES\n%d\n%d\n",room->b->p1_time, room->b->p2_time);		
-	}
-	si->send_fds[(si->size)++] = room->player_fd[0];
-	si->send_fds[(si->size)++] = room->player_fd[1];
+    struct timeval now;
+    bool isFinish = false;
+    gettimeofday(&now,NULL);
+    double time_diff = (now.tv_sec - room->gi->prev_time.tv_sec);
+    if(room->b->player_turn == WHITE){
+	room->b->white_time -= (int)time_diff;
+    }
+    else{
+	room->b->black_time -= (int)time_diff;
+    }
+    room->gi->prev_time = now;
+    if(room->b->white_time <= 0 || winner == BLACK) {
+	sprintf(si->send_string,"ROO\nFIN\nP2\n");
+	isFinish = true;
+    }
+    else if(room->b->black_time <= 0 || winner == WHITE){
+	sprintf(si->send_string,"ROO\nFIN\nP1\n");
+	isFinish = true;
+    }
+    else if(winner == 0){
+	sprintf(si->send_string,"ROO\nRES\n%d\n%d\n",room->b->white_time, room->b->black_time);		
+    }
+    si->send_fds[(si->size)++] = room->player_fd[0];
+    si->send_fds[(si->size)++] = room->player_fd[1];
     wrappedWriteAll(si);
-	if(isFinish){
-		finishGame(room->b);
-        exit_room(room->gi, pr);
-	}
+    if(isFinish){
+	finishGame(room->b);
+	exitRoom(room->gi, pr);
+    }
 }
