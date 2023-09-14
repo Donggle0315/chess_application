@@ -31,6 +31,8 @@ ChessBoard* initBoard(){
     for(int death_idx = 0; death_idx < PIECE_CNT; death_idx++){
         chess_board->white_death[death_idx] = chess_board->black_death[death_idx] = BLANK;
     }
+	chess_board->b_death_idx = 0;
+	chess_board->w_death_idx = 0;
 
     /* init player turn */
     chess_board->player_turn = WHITE;
@@ -78,7 +80,6 @@ bool handlePawn(ChessBoard* chess_board, int start_row, int start_col, int finis
         if(start_row == 1 && move_col == 0 && move_row == 2 && chess_board->board[start_row+1][start_col] == BLANK) return true;//can move forward two space when first moving
         if(move_col == 0 && move_row == 1) return true;//move forward a space
     }
-
     /* selected pawn cannot move anywhere */
     return false;
 }
@@ -112,6 +113,7 @@ bool handleRook(ChessBoard* chess_board, int start_row, int start_col, int finis
             }
         }
     }
+	else if(move_col * move_row != 0 || move_col + move_row == 0 ) return false;
    
     return true;
 }
@@ -175,7 +177,7 @@ bool handleKing(ChessBoard* chess_board, int start_row, int start_col, int finis
 bool canMove(ChessBoard* chess_board, int start_row, int start_col, int finish_row, int finish_col){
     /* check selected pos is out of board */
     if(start_row < 0 || start_row >= ROW || start_col < 0 || start_col >= COL || finish_row < 0 || finish_row >= ROW || finish_col < 0 || finish_col >= COL) return false;
-    
+    if(start_row == finish_row && start_col == finish_row) return false;
     /* check selected piece is legal */
     if(getPieceColor(chess_board->board[start_row][start_col]) != chess_board->player_turn) return false;
     if(getPieceColor(chess_board->board[finish_row][finish_col]) == chess_board-> player_turn) return false;
@@ -203,7 +205,7 @@ bool canMove(ChessBoard* chess_board, int start_row, int start_col, int finish_r
 int movePiece(ChessBoard* chess_board,int start_row,int start_col, int finish_row, int finish_col, bool option){
     /* store death piece's code */
     int death_code = BLANK;
-
+	
     /* if en_passant is occured */
     if(chess_board->en_passant_flag){
         if((chess_board->board[start_row][start_col] % 10) == 6 && abs(start_col-finish_col) == 1 && chess_board->board[finish_row][finish_col] == BLANK){
@@ -217,7 +219,6 @@ int movePiece(ChessBoard* chess_board,int start_row,int start_col, int finish_ro
             }
         }
     }
-
     /* if castling is occured */
     if(chess_board->castling_flag){
         if(start_row == 0 && start_col == 4 && finish_row == 0 && finish_col == 1){
@@ -242,7 +243,7 @@ int movePiece(ChessBoard* chess_board,int start_row,int start_col, int finish_ro
     if(getPieceColor(chess_board->board[finish_row][finish_col]) != BLANK) {
         death_code = chess_board->board[finish_row][finish_col];
     }
-
+	
     /* move selected piece */
     chess_board->board[finish_row][finish_col] = chess_board->board[start_row][start_col];
     chess_board->board[start_row][start_col] = BLANK;
@@ -260,7 +261,7 @@ int movePiece(ChessBoard* chess_board,int start_row,int start_col, int finish_ro
         else if(start_row == 0 && start_col == 7) chess_board->castling_check[2] = true;//RIGHT B_ROOK
         else if(start_row == 7 && start_col == 0) chess_board->castling_check[3] = true;//LEFT W_ROOK
         else if(start_row == 7 && start_col == 4) chess_board->castling_check[4] = true;//W_KING
-        else if(start_row == 7 && start_col == 7) chess_board->castling_check[5] = true;//RIGHT B_ROOK
+        else if(start_row == 7 && start_col == 7) chess_board->castling_check[5] = true;//RIGHT B_ROOK		
     }
 
     return death_code;
@@ -308,17 +309,19 @@ bool isFinish(ChessBoard* chess_board){
                 Coordinate moveable_pos[64];
                 int moveable_pos_idx = 0;
                 getMoveablePosition(chess_board,row_idx,col_idx,moveable_pos,&moveable_pos_idx);//get moveable position of selected piece
+
                 for(int pos_idx = 0; pos_idx < moveable_pos_idx; pos_idx++){
                     ChessBoard* copy_board = copyBoard(chess_board);//store original board
-                    int tmp_death_code = movePiece(chess_board,row_idx,col_idx,moveable_pos[pos_idx].row,moveable_pos[pos_idx].col,false);
+                    int tmp_death_code = movePiece(chess_board,row_idx,col_idx,moveable_pos[pos_idx].row,moveable_pos[pos_idx].col,true);
                     if(!isCheck(chess_board)) finish_flag = false;//this game is not finished
                     recoverBoard(chess_board,copy_board);//restore original board
                 }
-                if(!finish_flag) return false;//player can move a piece
-            }
+                if(!finish_flag) {
+					return false;//player can move a piece
+				}
+			}
         }
     }
-
     return true;
 }
 
@@ -387,7 +390,8 @@ void recoverBoard(ChessBoard* original_board, ChessBoard* chess_board){
     original_board->en_passant_flag = chess_board->en_passant_flag;
     original_board->black_time = chess_board->black_time;
     original_board->white_time = chess_board->white_time;
-
+	
+	free(chess_board);
 }
 
 bool isCheck(ChessBoard* chess_board){
@@ -404,7 +408,6 @@ bool isCheck(ChessBoard* chess_board){
             }
         }
     }
-
     /* if any enemy piece can move to current_player's king, then return ture */
     for(int row_idx = 0; row_idx < ROW; row_idx++){
         for(int col_idx = 0;col_idx < COL; col_idx++){
@@ -433,9 +436,12 @@ void getMoveablePosition(ChessBoard* chess_board, int row, int col, Coordinate* 
                 if(!isCheck(chess_board)){
                     /* add moveable position */
                     can_pos_list[*can_pos_idx].row = row_idx;
-                    can_pos_list[(*can_pos_idx)++].col = col_idx;
+                    can_pos_list[*can_pos_idx].col = col_idx;
+	
+					(*can_pos_idx)++;
                 }
                 recoverBoard(chess_board,copy_board);
+
             }
         }
     }
@@ -445,9 +451,9 @@ void getMoveablePosition(ChessBoard* chess_board, int row, int col, Coordinate* 
     canEnPassant(chess_board,&en_passant_pos,row,col);
     if(chess_board->en_passant_flag){
         can_pos_list[*can_pos_idx].row = en_passant_pos.row;
-        can_pos_list[(*can_pos_idx)++].col = en_passant_pos.col;
+        can_pos_list[*can_pos_idx].col = en_passant_pos.col;
+		(*can_pos_idx)++;
     }
-
     /* check if selected piece can do castling */
     int castling_pos_idx = 0;
     Coordinate castling_pos_list[2];
@@ -455,7 +461,8 @@ void getMoveablePosition(ChessBoard* chess_board, int row, int col, Coordinate* 
     if(chess_board->castling_flag){
         for(int idx = 0; idx < castling_pos_idx; idx++){
             can_pos_list[*can_pos_idx].row = castling_pos_list[idx].row;
-            can_pos_list[(*can_pos_idx)++].col = castling_pos_list[idx].col;
+            can_pos_list[*can_pos_idx].col = castling_pos_list[idx].col;
+			(*can_pos_idx)++;
         }
     }
 }
@@ -514,9 +521,9 @@ bool canCastlingWithoutCheck(ChessBoard* chess_board,int row, int col){
 
     /* move king to the [row][col] */
     chess_board->board[row][col] = chess_board->board[king_row][king_col];
-    chess_board->board[king_row][king_col] = BLANK;
     king_id = chess_board->board[king_row][king_col];
-
+	chess_board->board[king_row][king_col] = BLANK;
+    
     /* if moved position makes check, then cannot do castling */
     if(isCheck(chess_board)) castling_flag = false;
     
@@ -537,6 +544,9 @@ void canEnPassant(ChessBoard* chess_board,Coordinate* en_passant_pos,int last_ro
             en_passant_pos->row = last_row-1;
             en_passant_pos->col = chess_board->last_move[3];
         }
+		else{
+			chess_board->en_passant_flag = false;
+		}
     }
     /* check if BLACK's piece satisfy en_passant condition */
     else if(chess_board->player_turn == BLACK){
@@ -547,15 +557,15 @@ void canEnPassant(ChessBoard* chess_board,Coordinate* en_passant_pos,int last_ro
             en_passant_pos->row = last_row+1;
             en_passant_pos->col = chess_board->last_move[3];
         }
-    }
-    else{
-        chess_board->en_passant_flag=false;
+		else{
+			chess_board->en_passant_flag = false;
+		}
     }
 }
 
-bool isInMoveablePosition(int finish_row,int finish_col,Coordinate *movealbe_pos,int moveable_idx){
+bool isInMoveablePosition(int finish_row,int finish_col,Coordinate *moveable_pos,int moveable_idx){
     for(int idx = 0; idx < moveable_idx; idx++){
-        if(movealbe_pos[idx].row == finish_row && movealbe_pos[idx].col == finish_col) return true;
+        if(moveable_pos[idx].row == finish_row && moveable_pos[idx].col == finish_col) return true;
     }
     return false;
 }

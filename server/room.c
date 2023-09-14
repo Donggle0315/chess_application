@@ -100,7 +100,8 @@ void handleMOV(PoolRoom* pr,RoomOption *room, SendInfo *si, char** arguments){
     else{
         moveable_flag = false;
     }
-
+	
+	
     //check if the game finish
     bool finish = isFinish(room->b);
     //send message to client
