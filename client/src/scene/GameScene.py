@@ -1,15 +1,37 @@
 import pygame
 import pygame_gui
 from pygame import Rect
+from pygame_gui.core.utility import Path
 from ..lib.NetworkPygame import NetworkPygame, GameEvent
 
 
+class GameConstant:
+    SIZE = 60
+
 class ChessSprite():
-    def __init__(self, color, x, y, width, height, chess_sprites, board_coord):
+    chess_sprite_path = Path('../../img/simple')
+    chess_sprites = {}
+    chess_sprites[21] = pygame.image.load(chess_sprite_path/'rook_b.png')
+    chess_sprites[22] = pygame.image.load(chess_sprite_path/'knight_b.png')
+    chess_sprites[23] = pygame.image.load(chess_sprite_path/'bishop_b.png')
+    chess_sprites[24] = pygame.image.load(chess_sprite_path/'queen_b.png')
+    chess_sprites[25] = pygame.image.load(chess_sprite_path/'king_b.png')
+    chess_sprites[26] = pygame.image.load(chess_sprite_path/'pawn_b.png')
+    chess_sprites[31] = pygame.image.load(chess_sprite_path/'rook_w.png')
+    chess_sprites[32] = pygame.image.load(chess_sprite_path/'knight_w.png')
+    chess_sprites[33] = pygame.image.load(chess_sprite_path/'bishop_w.png')
+    chess_sprites[34] = pygame.image.load(chess_sprite_path/'queen_w.png')
+    chess_sprites[35] = pygame.image.load(chess_sprite_path/'king_w.png')
+    chess_sprites[36] = pygame.image.load(chess_sprite_path/'pawn_w.png')
+    chess_sprites[99] = pygame.image.load(chess_sprite_path/'checker.png')
+
+    for k in chess_sprites:
+        chess_sprites[k] = pygame.transform.scale(chess_sprites[k], (GameConstant.SIZE, GameConstant.SIZE))
+
+    def __init__(self, color, x, y, width, height, board_coord):
         super(ChessSprite, self).__init__()
         self.color = color
         self.rect = Rect(x, y, width, height)
-        self.chess_sprites = chess_sprites
         self.surface = pygame.Surface((width, height))
         self.surface.fill(self.color)
         self.board_coord = board_coord
@@ -45,46 +67,33 @@ class PlayerInfoPanel():
 class GameScene():
     def __init__(self, window: pygame.Surface, sock: NetworkPygame, clock: pygame.time.Clock, room_id, GAME_EVENT):
         # room
-        self.manager = pygame_gui.UIManager((1280, 720))
-        self.background = pygame.Surface((1280, 720))
-        self.background.fill('#EEEEEE')
+        
+        self.size = GameConstant.SIZE
 
-        # load sprites
-        self.chess_sprites = {}
-        self.chess_sprites[21] = pygame.image.load('./img/rook_b.png')
-        self.chess_sprites[22] = pygame.image.load('./img/knight_b.png')
-        self.chess_sprites[23] = pygame.image.load('./img/bishop_b.png')
-        self.chess_sprites[24] = pygame.image.load('./img/queen_b.png')
-        self.chess_sprites[25] = pygame.image.load('./img/king_b.png')
-        self.chess_sprites[26] = pygame.image.load('./img/pawn_b.png')
-        self.chess_sprites[31] = pygame.image.load('./img/rook_w.png')
-        self.chess_sprites[32] = pygame.image.load('./img/knight_w.png')
-        self.chess_sprites[33] = pygame.image.load('./img/bishop_w.png')
-        self.chess_sprites[34] = pygame.image.load('./img/queen_w.png')
-        self.chess_sprites[35] = pygame.image.load('./img/king_w.png')
-        self.chess_sprites[36] = pygame.image.load('./img/pawn_w.png')
-        self.chess_sprites[99] = pygame.image.load('./img/checker.png')
-
-        self.size = 60
         self.start_x = 400
         self.start_y = 60
 
-        for k in self.chess_sprites:
-            self.chess_sprites[k] = pygame.transform.scale(self.chess_sprites[k], (self.size, self.size))
 
         self.board = []
         self.board_gui = []
         for i in range(8):
             row = []
             row_gui = []
+
             for j in range(8):
                 row.append(-1)
                 color = '#7A9D54' if (i+j)%2 else '#EEEEEE'
-                row_gui.append(ChessSprite(color, self.start_x+self.size*j, self.start_y+self.size*i, self.size, self.size, self.chess_sprites, (j,i)))
+                row_gui.append(ChessSprite(color, self.start_x+self.size*j, self.start_y+self.size*i, self.size, self.size, (j,i)))
+
             self.board.append(row)
             self.board_gui.append(row_gui)
 
+
         # gui elements 
+        self.manager = pygame_gui.UIManager((1280, 720))
+        self.background = pygame.Surface((1280, 720))
+        self.background.fill('#EEEEEE')
+
         self.start_game_bt_rect = Rect(500, 600, 200, 50)
         
         self.start_game_bt = pygame_gui.elements.UIButton(relative_rect=self.start_game_bt_rect, 
@@ -139,10 +148,12 @@ class GameScene():
         self.GAME_EVENT = GAME_EVENT
         self.client_id = -1
 
+
         # ROO\nINF\n
         self.get_player_info()
         self.running = True
         self.gaming = False
+
 
     def run(self):
         while self.running:
@@ -268,5 +279,6 @@ class GameScene():
         # close the window, close the sockets, exit program
         pygame.quit()
         exit()
+
 
 
