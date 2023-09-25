@@ -1,15 +1,15 @@
 import pygame
 import pygame_gui
 from pygame import Rect
-from pygame_gui.core.utility import Path
-from ..lib.NetworkPygame import NetworkPygame, GameEvent
+from pathlib import Path
+from lib.NetworkPygame import NetworkPygame, GameEvent
 
 
 class GameConstant:
     SIZE = 60
 
 class ChessSprite():
-    chess_sprite_path = Path('../../img/simple')
+    chess_sprite_path = Path(__file__ ).parent.absolute()/'../../img/simple'
     chess_sprites = {}
     chess_sprites[21] = pygame.image.load(chess_sprite_path/'rook_b.png')
     chess_sprites[22] = pygame.image.load(chess_sprite_path/'knight_b.png')
@@ -136,7 +136,6 @@ class GameScene():
                                                                container=self.finish_window)
 
 
-        self.board[0][0] = 25
 
         self.turn = 0
         self.cur_select = [-1, -1]

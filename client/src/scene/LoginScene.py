@@ -1,6 +1,7 @@
-from ..lib.NetworkPygame import NetworkPygame, GameEvent
+from lib.NetworkPygame import NetworkPygame, GameEvent
 import pygame
 import pygame_gui
+from pathlib import Path
 from pygame import Rect
 
 
@@ -20,7 +21,8 @@ class LoginScene():
         self.reg_bt = pygame_gui.elements.UIButton(relative_rect=Rect(200, 100, 100, 40),
                                                    text='register', manager=self.manager,
                                                    anchors={'center': 'center'})
-        self.background = pygame.image.load('./img/chess logo.png')
+        image_path = Path(__file__).parent.absolute()/'../../img'
+        self.background = pygame.image.load(image_path/'chess logo.png')
 
 
 

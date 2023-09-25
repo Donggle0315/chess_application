@@ -1,7 +1,7 @@
 import pygame
 import socket
 from enum import Enum, auto
-from ..constants import *
+from constants import *
 
 
 # define custom events that could happen 

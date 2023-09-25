@@ -1,6 +1,6 @@
 import pygame
 import pygame_gui
-from ..lib.NetworkPygame import NetworkPygame, GameEvent
+from lib.NetworkPygame import NetworkPygame, GameEvent
 from pygame import Rect
 
 class LobbyScene():
