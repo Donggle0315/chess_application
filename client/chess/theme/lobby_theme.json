@@ -1,0 +1,29 @@
+{
+    "#bt_refresh":
+    {
+        "images":
+        {
+            "normal_image":
+            {
+                "package": "img",
+                "resource": "chess_icon_reset.png"
+            },
+            "hovered_image":
+            {
+                "package": "img",
+                "resource": "chess_icon_reset.png"
+            },
+            "selected_image":
+            {
+                "package": "img",
+                "resource": "chess_icon_reset.png"
+            },
+            "disabled_image":
+            {
+                "package": "img",
+                "resource": "chess_icon_reset.png"
+            }
+        }
+
+    }
+}

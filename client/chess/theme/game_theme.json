@@ -1,0 +1,21 @@
+{
+    "@time_label":
+    {
+        "colours":
+        {
+            "dark_bg": "#545454"
+        },
+        "font":
+        {
+            "size": 40
+        }
+    },
+
+    "#username_label":
+    {
+        "font":
+        {
+            "size": 30
+        }
+    }
+}
