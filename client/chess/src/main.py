@@ -1,4 +1,6 @@
 import pygame
+import sys
+import os
 from constants import *
 from lib.NetworkPygame import NetworkPygame
 from scene.LoginScene import LoginScene
@@ -35,6 +37,8 @@ def start_game():
 
 
 if __name__ == '__main__':
+    sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+    print(sys.path)
     start_game()
 
 

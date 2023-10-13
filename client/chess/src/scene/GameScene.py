@@ -2,6 +2,7 @@ import pygame
 import pygame_gui
 from pygame import Rect
 from pathlib import Path
+from pygame_gui.ui_manager import ObjectID, PackageResource
 from lib.NetworkPygame import NetworkPygame, GameEvent
 
 
@@ -51,10 +52,12 @@ class PlayerInfoPanel():
         self.manager = manager
         self.panel = pygame_gui.elements.UIPanel(relative_rect=Rect(0, 0, 300, 350),
                                                  manager=self.manager)
-        self.username = pygame_gui.elements.UILabel(text='???',
-                                                    relative_rect=Rect(10, 10, 200, 50),
+        self.username = pygame_gui.elements.UILabel(text='',
+                                                    relative_rect=Rect(0, 40, 290, 80),
                                                     manager=self.manager,
-                                                    container=self.panel)
+                                                    container=self.panel,
+                                                    object_id="#username_label")
+
 
     def set_position(self, left, top):
         self.panel.set_relative_position((left, top))
@@ -90,7 +93,8 @@ class GameScene():
 
 
         # gui elements 
-        self.manager = pygame_gui.UIManager((1280, 720))
+        theme_path = PackageResource('theme', 'game_theme.json')
+        self.manager = pygame_gui.UIManager((1280, 720), theme_path)
         self.background = pygame.Surface((1280, 720))
         self.background.fill('#EEEEEE')
 
@@ -102,15 +106,31 @@ class GameScene():
 
         self.p1_time_rect = Rect(0, 0, 200, 100)
         self.p2_time_rect = Rect(0, 0, 200, 100)
-        self.p1_time_rect.topleft = (50, 100)
-        self.p2_time_rect.topright = (1230, 100)
+        self.p1_time_rect.topleft = (50, 50)
+        self.p2_time_rect.topright = (1230, 50)
 
-        self.p1_time_indicator = pygame_gui.elements.UILabel(text='99:99',
+        self.p1_time_indicator = pygame_gui.elements.UILabel(text='',
                                                              relative_rect=self.p1_time_rect,
-                                                             manager=self.manager)
-        self.p2_time_indicator = pygame_gui.elements.UILabel(text='99:99',
+                                                             manager=self.manager,
+                                                             object_id=ObjectID('#p1_time_label', '@time_label'))
+        self.p2_time_indicator = pygame_gui.elements.UILabel(text='',
                                                              relative_rect=self.p2_time_rect,
-                                                             manager=self.manager)
+                                                             manager=self.manager,
+                                                             object_id=ObjectID('#p2_time_label', '@time_label'))
+
+        image_path = Path(__file__).parent.absolute()/'../../img'
+        self.bl_bunny_img = pygame.image.load(image_path/'bl_bunny.png')
+        self.wh_bunny_img = pygame.image.load(image_path/'wh_bunny.png')
+        self.bl_bunny_turn_img = pygame.image.load(image_path/'bl_bunny_turn.png')
+        self.wh_bunny_turn_img = pygame.image.load(image_path/'wh_bunny_turn.png')
+
+        self.bl_bunny = pygame_gui.elements.UIImage(Rect(1030, 200, 200, 200),
+                                                        image_surface=self.bl_bunny_img,
+                                                        manager=self.manager)
+
+        self.wh_bunny = pygame_gui.elements.UIImage(Rect(50, 200, 200, 200),
+                                                        image_surface=self.wh_bunny_img,
+                                                        manager=self.manager)
 
         self.p1_time = 100.0
         self.p2_time = 100.0
@@ -223,6 +243,9 @@ class GameScene():
                     elif event.utype == GameEvent.ROOM_TURN_CHANGE:
                         self.gaming = True
                         self.turn = event.turn
+                        # set images
+                        self.change_bunny_img(self.turn)
+                        
                         self.disable_moveable()
                         # parse board_str
                         board_str = event.board_str
@@ -278,6 +301,15 @@ class GameScene():
         # close the window, close the sockets, exit program
         pygame.quit()
         exit()
+
+    def change_bunny_img(self, turn):
+        if self.client_id == 1 and self.client_id == turn%2:
+            self.wh_bunny.set_image(self.wh_bunny_turn_img)
+            self.bl_bunny.set_image(self.bl_bunny_img)
+        else:
+            self.wh_bunny.set_image(self.wh_bunny_img)
+            self.bl_bunny.set_image(self.bl_bunny_turn_img)
+
 
 
 

@@ -1,12 +1,19 @@
 import pygame
 import pygame_gui
+from pygame_gui.ui_manager import ObjectID, PackageResource
 from lib.NetworkPygame import NetworkPygame, GameEvent
 from pygame import Rect
+from pathlib import Path
+import os
+
+
+
 
 class LobbyScene():
     def __init__(self, window: pygame.Surface, sock: NetworkPygame, clock: pygame.time.Clock, GAME_EVENT):
         # lobby screen
-        self.manager = pygame_gui.UIManager((1280, 720))
+        theme_path = PackageResource('theme', 'lobby_theme.json')
+        self.manager = pygame_gui.UIManager((1280, 720), theme_path)
 
         self.background = pygame.Surface((1280, 720))
         self.background.fill('#EEEEEE')
@@ -14,9 +21,11 @@ class LobbyScene():
         self.lobby_refresh_bt_rect = Rect(0, 0, 50, 50)
         self.lobby_refresh_bt_rect.bottomright = (-100, -50)
         self.lobby_refresh_bt = pygame_gui.elements.UIButton(relative_rect=self.lobby_refresh_bt_rect,
-                                                            text='refresh', manager=self.manager,
-                                                            anchors={'right': 'right',
-                                                                    'bottom': 'bottom'})
+                                                             text='ref', manager=self.manager,
+                                                             anchors={'right': 'right',
+                                                                    'bottom': 'bottom'},
+                                                             object_id=ObjectID('#bt_refresh', '@bt'))
+        
 
         self.create_room_bt_rect = Rect(0, 0, 50, 50)
         self.create_room_bt_rect.bottomright = (-200, -50)
@@ -24,6 +33,7 @@ class LobbyScene():
                                                             text='create room', manager=self.manager,
                                                             anchors={'right': 'right',
                                                                     'bottom': 'bottom'})
+
 
         self.rooms_panel_display = pygame_gui.elements.UIPanel(Rect(30, 30, 900, 650),
                                                 manager=self.manager)
@@ -120,15 +130,12 @@ class LobbyScene():
             
             if event.type == pygame_gui.UI_BUTTON_PRESSED:
                 if event.ui_element == self.lobby_refresh_bt:
-                    print('refresh')
                     self.fetch_room()
 
                 elif event.ui_element == self.create_room_bt:
-                    print('create room')
                     self.create_room_window.show()
 
                 elif event.ui_element == self.final_create_room_bt:
-                    print('create room final')
                     rname = self.room_name_text_box.text
                     rmax_user = self.max_user_menu.selected_option
                     rtime = self.time_menu.selected_option

@@ -9,20 +9,19 @@ class LoginScene():
     def __init__(self, window: pygame.Surface, sock: NetworkPygame, clock: pygame.time.Clock, GAME_EVENT):
         # login screen
         self.manager = pygame_gui.UIManager((1280, 720))
-        self.login_button = pygame_gui.elements.UIButton(relative_rect=Rect(200, 0, 200, 120), 
-                                                    text='login', manager=self.manager,
-                                                    anchors={'center': 'center'})
-        self.id_text_box = pygame_gui.elements.UITextEntryLine(relative_rect=Rect(-50, -30, 200, 50), manager=self.manager,
-                                                        anchors={'center': 'center'})
-        self.pw_text_box = pygame_gui.elements.UITextEntryLine(relative_rect=Rect(-50, 30, 200, 50), manager=self.manager,
-                                                        anchors={'center': 'center'})
-        self.alert_label = pygame_gui.elements.UILabel(text='', relative_rect=Rect(-50, 80, 200, 50), manager=self.manager,
-                                                        anchors={'center': 'center'})
-        self.reg_bt = pygame_gui.elements.UIButton(relative_rect=Rect(200, 100, 100, 40),
-                                                   text='register', manager=self.manager,
-                                                   anchors={'center': 'center'})
+        self.login_button = pygame_gui.elements.UIButton(relative_rect=Rect(680, 300, 200, 120), 
+                                                    text='login', manager=self.manager)
+        self.id_text_box = pygame_gui.elements.UITextEntryLine(relative_rect=Rect(420, 305, 200, 50), manager=self.manager)
+        self.pw_text_box = pygame_gui.elements.UITextEntryLine(relative_rect=Rect(420, 365, 200, 50), manager=self.manager)
+        self.alert_label = pygame_gui.elements.UILabel(text='', relative_rect=Rect(420, 430, 200, 50), manager=self.manager)
+        self.reg_bt = pygame_gui.elements.UIButton(relative_rect=Rect(730, 435, 100, 40),
+                                                   text='register', manager=self.manager)
         image_path = Path(__file__).parent.absolute()/'../../img'
         self.background = pygame.image.load(image_path/'chess logo.png')
+        self.chess_logo = pygame_gui.elements.UIImage(relative_rect=Rect(980, 25, 200, 200), 
+                                                image_surface=window,
+                                                manager=self.manager)
+        self.chess_logo.set_image(pygame.image.load(image_path/'logo.jpg'))
 
 
 
