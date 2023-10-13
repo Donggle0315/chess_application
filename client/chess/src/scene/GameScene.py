@@ -303,7 +303,7 @@ class GameScene():
         exit()
 
     def change_bunny_img(self, turn):
-        if self.client_id == 1 and self.client_id == turn%2:
+        if turn%2 == 1:
             self.wh_bunny.set_image(self.wh_bunny_turn_img)
             self.bl_bunny.set_image(self.bl_bunny_img)
         else:
