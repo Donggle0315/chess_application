@@ -15,7 +15,14 @@
     {
         "font":
         {
-            "size": 30
+            "name": "AutourOne",
+            "size": 30,
+            "regular_resource":
+            {
+                "package": "data.fonts",
+                "resource": "AutourOne-Regular.ttf"
+            }
         }
     }
+
 }

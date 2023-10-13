@@ -96,7 +96,7 @@ class GameScene():
         theme_path = PackageResource('theme', 'game_theme.json')
         self.manager = pygame_gui.UIManager((1280, 720), theme_path)
         self.background = pygame.Surface((1280, 720))
-        self.background.fill('#EEEEEE')
+        self.background.fill('#DDDDDD')
 
         self.start_game_bt_rect = Rect(500, 600, 200, 50)
         
