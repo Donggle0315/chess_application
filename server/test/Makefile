@@ -2,6 +2,7 @@ CC = gcc
 CFLAGS = -Wall -Wextra -g
 TESTDIR = ./test_src
 BINDIR = bin
+BUILDDIR = build
 INCDIR = ../include
 
 MAINOBJDIR = ../build
@@ -32,14 +33,17 @@ project:
 tests: $(TEST_EXES)
 
 # Pattern rule to build individual test executables
-$(BINDIR)/%.test: $(TESTDIR)/%.c $(OBJS) build/unity.o | $(BINDIR)
-	$(CC) $(CFLAGS) -o $@ $< $(OBJS) build/unity.o $(addprefix -I,$(INC_SUBDIRS)) -Iinclude
+$(BINDIR)/%.test: $(TESTDIR)/%.c $(OBJS) $(BUILDDIR)/unity.o | $(BINDIR)
+	$(CC) $(CFLAGS) -o $@ $< $(OBJS) $(BUILDDIR)/unity.o $(addprefix -I,$(INC_SUBDIRS)) -Iinclude
 
-build/unity.o: include/unity.h include/unity.c
-	$(CC) $(CFLAGS) -o unity.o
+$(BUILDDIR)/unity.o: include/unity.h include/unity.c | $(BUILDDIR)
+	$(CC) $(CFLAGS) -o $(BUILDDIR)/unity.o -c include/unity.c -Iinclude
 
 $(BINDIR):
 	mkdir -p $(BINDIR)
+
+$(BUILDDIR):
+	mkdir -p $(BUILDDIR)
 
 # Clean rule
 clean:
