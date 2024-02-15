@@ -1,66 +1,49 @@
-# Compiler
-CC := gcc
+CC = gcc
+CFLAGS = -Wall -Wextra -g
+TESTDIR = ./test_src
+BINDIR = bin
+INCDIR = ../include
 
-# Compiler flags
-CFLAGS := -Wall -Wextra
-LFLAGS := -Ilib -I../src/network -I../src -Llib -ltest
-
-LIB_DIR := lib
-BIN_DIR := bin
-
-# Compiled library
-LIB := libtest.a
-
-SRC_DIR := ../src ../src/network
-SRC_FILES := $(foreach dir, $(SRC_DIR), $(wildcard $(SRC_DIR)/*.c))
-BUILD_DIR := build
-OBJ_FILES := $(patsubst %.c,$(BUILD_DIR)/%.o,$(SRC_FILES))
-
-$(info $(SRC_FILES))
-$(info $(OBJ_FILES))
+MAINOBJDIR = ../build
+OBJS := $(shell find $(MAINOBJDIR) -name '*.o' | grep -v main.o)
 
 
-TEST_SRC_DIR := test_src
-TEST_SRC_FILES := $(wildcard $(TEST_SRC_DIR)/*.c)
-TEST_BUILD_DIR := build_test
-TEST_OBJ_FILES := $(patsubst $(TEST_SRC_DIR)/%.c,$(TEST_BUILD_DIR)/%.test.o,$(TEST_SRC_FILES))
+# List all the test source files in /test
+TEST_SRCS := $(wildcard $(TESTDIR)/*.c)
+# Extracts only the filenames without extensions
+TEST_BASENAMES := $(notdir $(basename $(TEST_SRCS)))
 
-TEST_BIN_DIR := bin
-TEST_TARGET_FILES := $(patsubst $(TEST_SRC_DIR)/%.c,$(TEST_BIN_DIR)/%.test,$(TEST_SRC_FILES))
+# List all the corresponding test executables in ../bin
+TEST_EXES := $(addprefix $(BINDIR)/,$(addsuffix .test,$(TEST_BASENAMES)))
 
-all: $(BIN_DIR) $(TEST_TARGET_FILES)
+# Get all subdirectories of ../include
+INC_SUBDIRS := $(shell find $(INCDIR) -type d)
 
-# Rule to build test binaries
-$(TEST_BIN_DIR)/%.test: $(TEST_BUILD_DIR)/%.test.o $(LIB) $(OBJ_FILES) | $(BIN_DIR)
-	$(CC) $(CFLAGS) $(OBJ_FILES) $< -o $@ $(LFLAGS)
-
-$(BIN_DIR):
-	mkdir -p $(BIN_DIR)
-
-$(BUILD_DIR):
-	mkdir -p $(BUILD_DIR)
-
-$(TEST_BUILD_DIR):
-	mkdir -p $(TEST_BUILD_DIR)
-
-# Compile source files to object files
-$(TEST_BUILD_DIR)/%.test.o: $(TEST_SRC_DIR)/%.c | $(TEST_BUILD_DIR)
-	$(CC) -c $< -o $@ $(LFLAGS)
-
-$(BUILD_DIR)/%.o: $(SRC_DIR)/%.c | $(BUILD_DIR)
-	$(CC) $(CFLAGS) -c $< -o $@ $(LFLAGS)
-
-# Rule to build the library
-$(LIB): $(LIB_DIR)/unity.c $(LIB_DIR)/fff.h $(LIB_DIR)/unity.h $(LIB_DIR)/unity_internals.h | $(BUILD_DIR)
-	$(CC) $(CFLAGS) -c $(LIB_DIR)/unity.c -o $(BUILD_DIR)/unity.o
-	ar rcs $@ $(BUILD_DIR)/unity.o
-	mv $@ $(LIB_DIR)/
+# Flatten the list of subdirectories
+INC_SUBDIRS_FLAT := $(foreach dir,$(INC_SUBDIRS),$(wildcard $(dir)/*.h))
 
 
-# Clean
+
+# Default target
+all: project tests
+
+# Build the project files in ../src
+project:
+	cd .. && make
+
+# Build the individual test files in /test
+tests: $(TEST_EXES)
+
+# Pattern rule to build individual test executables
+$(BINDIR)/%.test: $(TESTDIR)/%.c $(OBJS) build/unity.o | $(BINDIR)
+	$(CC) $(CFLAGS) -o $@ $< $(OBJS) build/unity.o $(addprefix -I,$(INC_SUBDIRS)) -Iinclude
+
+build/unity.o: include/unity.h include/unity.c
+	$(CC) $(CFLAGS) -o unity.o
+
+$(BINDIR):
+	mkdir -p $(BINDIR)
+
+# Clean rule
 clean:
-	@echo "Cleaning up..."
-	rm -rf $(BIN_DIR) $(BUILD_DIR) $(TEST_BUILD_DIR) *.o
-	@echo "Clean complete."
-
-.PHONY: all clean
+	rm -r $(BINDIR)

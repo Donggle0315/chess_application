@@ -6,5 +6,6 @@ client/.venv
 *.d
 *.test
 
+server/build
 server/bin
 server/mysql_login_info.h
