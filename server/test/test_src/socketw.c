@@ -118,12 +118,17 @@ void test_socketw_dequeue_multiple() {
     
 }
 
+
 void test_socketw_run_server() {
 
 }
 
 void test_socketw_send_msgs(){
 
+}
+
+void test_github_action() {
+    TEST_FAIL();
 }
 
 int main(void) {
@@ -138,5 +143,13 @@ int main(void) {
     RUN_TEST(test_socketw_dequeue_nothing);
     RUN_TEST(test_socketw_dequeue_multiple);
 
+    RUN_TEST(test_github_action);
+
     return UNITY_END();
 }
+
+/*
+* TEST LIST
+* 
+* 
+*/
