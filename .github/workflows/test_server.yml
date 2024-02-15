@@ -1,0 +1,19 @@
+name: Test Server
+on:
+  push:
+    branches:
+    - main
+    - refactor_server
+  pull_request:
+    branches:
+    - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: build test
+      run: cd server/test && make
+    - name: run test
+      run: cd server/test && ./runall.sh
