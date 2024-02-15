@@ -1,7 +1,11 @@
+#include <math.h>
 #include <stdlib.h>
 
 #include "chess_game.h"
 #include "wlog.h"
+
+bool can_move_rook(ChessBoard *board, int sr, int sc, int tr, int tc);
+bool can_move_knight(int sr, int sc, int tr, int tc);
 
 ChessBoard *chess_create_board() {
     ChessBoard *chess_board = malloc(sizeof(*chess_board));
@@ -128,6 +132,15 @@ bool can_move_rook(ChessBoard *board, int sr, int sc, int tr, int tc) {
     return true;
 }
 
+bool can_move_knight(int sr, int sc, int tr, int tc) {
+    if ((abs(sr - tr) == 2 && abs(sc - tc) == 1) ||
+        (abs(sr - tr) == 1 && abs(sc - tc) == 2)) {
+        return true;
+    }
+
+    return false;
+}
+
 bool can_move(ChessBoard *board, int sr, int sc, int tr, int tc) {
     // Can't move Out of bounds
     if (sr < 0 || sr >= 8 || sc < 0 || sr >= 8 || tr < 0 || tr >= 8 || tc < 0 ||
@@ -143,7 +156,7 @@ bool can_move(ChessBoard *board, int sr, int sc, int tr, int tc) {
     }
 
     // Can't move if same color
-    if(get_color(board, sr, sc) == get_color(board, tr, tc)){
+    if (get_color(board, sr, sc) == get_color(board, tr, tc)) {
         DEBUG("Same color");
         return false;
     }
@@ -154,6 +167,9 @@ bool can_move(ChessBoard *board, int sr, int sc, int tr, int tc) {
     case BLACK_ROOK:
     case WHITE_ROOK:
         return can_move_rook(board, sr, sc, tr, tc);
+    case BLACK_KNIGHT:
+    case WHITE_KNIGHT:
+        return can_move_knight(sr, sc, tr, tc);
     }
 
     return false;

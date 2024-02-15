@@ -52,7 +52,35 @@ void test_rook_cannot_move_blocked() {
 }
 
 void test_knight_move() {
-    
+    set_piece(board, 3, 3, WHITE_KNIGHT);
+    TEST_ASSERT_TRUE(can_move(board, 3, 3, 5, 4));
+    TEST_ASSERT_TRUE(can_move(board, 3, 3, 5, 2));
+    TEST_ASSERT_TRUE(can_move(board, 3, 3, 1, 4));
+    TEST_ASSERT_TRUE(can_move(board, 3, 3, 1, 2));
+    TEST_ASSERT_TRUE(can_move(board, 3, 3, 2, 1));
+    TEST_ASSERT_TRUE(can_move(board, 3, 3, 4, 1));
+    TEST_ASSERT_TRUE(can_move(board, 3, 3, 2, 5));
+    TEST_ASSERT_TRUE(can_move(board, 3, 3, 4, 5));
+
+    set_piece(board, 3, 3, BLACK_KNIGHT);
+    TEST_ASSERT_TRUE(can_move(board, 3, 3, 5, 4));
+    TEST_ASSERT_TRUE(can_move(board, 3, 3, 5, 2));
+    TEST_ASSERT_TRUE(can_move(board, 3, 3, 1, 4));
+    TEST_ASSERT_TRUE(can_move(board, 3, 3, 1, 2));
+    TEST_ASSERT_TRUE(can_move(board, 3, 3, 2, 1));
+    TEST_ASSERT_TRUE(can_move(board, 3, 3, 4, 1));
+    TEST_ASSERT_TRUE(can_move(board, 3, 3, 2, 5));
+    TEST_ASSERT_TRUE(can_move(board, 3, 3, 4, 5));
+}
+
+void test_knight_cannot_move() {
+    set_piece(board, 3, 3, BLACK_KNIGHT);
+    TEST_ASSERT_FALSE(can_move(board, 3, 3, 4, 4));
+
+}
+
+void test_bishop_can_move_diagonal() {
+
 }
 
 
@@ -66,7 +94,7 @@ void test_blank_cannot_move() {
 
 void test_all_cannot_move_oob() {
     set_piece(board, 3, 6, BLACK_ROOK);
-    set_piece(board, 4, 1, WHITE_ROOK);
+    set_piece(board, 4, 1, WHITE_KNIGHT);
     TEST_ASSERT_FALSE(can_move(board, 3, 6, 0, 9));
     TEST_ASSERT_FALSE(can_move(board, 4, 1, -1, 6));
 }
@@ -98,6 +126,10 @@ int main(void) {
     RUN_TEST(test_rook_move_row);
     RUN_TEST(test_rook_cannot_move_diag);
     RUN_TEST(test_rook_cannot_move_blocked);
+
+    // knight
+    RUN_TEST(test_knight_move);
+    RUN_TEST(test_knight_cannot_move);
 
     // blank
     RUN_TEST(test_blank_cannot_move);
