@@ -11,7 +11,7 @@ BIN_DIR := bin
 # Compiled library
 LIB := libtest.a
 
-SRC_DIR := ../lib
+SRC_DIR := ../lib ../src
 SRC_FILES := $(wildcard $(SRC_DIR)/*.c)
 BUILD_DIR := build
 OBJ_FILES := $(patsubst $(SRC_DIR)/%.c,$(BUILD_DIR)/%.o,$(SRC_FILES))

@@ -1,2 +1,3 @@
 -I./lib
 -I../lib
+-I../src
