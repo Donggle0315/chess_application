@@ -66,6 +66,17 @@ void test_initialize_board() {
     }
 }
 
+void test_get_color() {
+    set_piece(board, 0, 0, BLACK_ROOK);
+    TEST_ASSERT_EQUAL(BLACK, get_color(board, 0, 0));
+
+    set_piece(board, 0, 0, WHITE_QUEEN);
+    TEST_ASSERT_EQUAL(WHITE, get_color(board, 0, 0));
+
+    set_piece(board, 0, 0, BLANK);
+    TEST_ASSERT_EQUAL(NONE, get_color(board, 0, 0));
+}
+
 
 int main(void) {
     UNITY_BEGIN();
@@ -73,6 +84,7 @@ int main(void) {
     RUN_TEST(test_create_destroy_board);
     RUN_TEST(test_get_set_piece);
     RUN_TEST(test_initialize_board);
+    RUN_TEST(test_get_color);
 
     UNITY_END();
 }

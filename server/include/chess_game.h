@@ -19,6 +19,12 @@ typedef enum {
     WHITE_KING
 } PIECE;
 
+typedef enum {
+    BLACK,
+    WHITE,
+    NONE
+} COLOR;
+
 typedef struct {
     PIECE board[8][8];
 } ChessBoard;
@@ -29,6 +35,8 @@ void chess_initialize_board(ChessBoard *board);
 
 void set_piece(ChessBoard *board, int row, int col, PIECE piece);
 PIECE get_piece(ChessBoard *board, int row, int col);
+COLOR get_color(ChessBoard *board, int row, int col);
+
 
 bool can_move(ChessBoard *board, int start_row, int start_col, int target_row, int target_col);
 
