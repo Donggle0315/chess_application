@@ -58,5 +58,8 @@ PIECE get_piece(ChessBoard *board, int row, int col) {
 }
 
 bool can_move(ChessBoard *board, int sr, int sc, int tr, int tc) {
-    return true;
+    if (sr == tr || sc == tc){
+        return true;
+    }
+    return false;
 }

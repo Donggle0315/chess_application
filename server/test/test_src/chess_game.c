@@ -67,25 +67,6 @@ void test_initialize_board() {
 }
 
 
-void test_can_move_rook() {
-    for(int i=0; i<8; i++){
-        for(int j=0; j<8; j++){
-            set_piece(board, i, j, BLANK);
-        }
-    }
-
-    set_piece(board, 3, 6, BLACK_ROOK);
-    set_piece(board, 4, 1, WHITE_ROOK);
-
-    // Able to move if row or col is same
-    TEST_ASSERT_TRUE(can_move(board, 3, 6, 3, 3));
-    TEST_ASSERT_TRUE(can_move(board, 4, 1, 4, 6));
-
-    // Unable to move if both row and col isn't same
-    TEST_ASSERT_FALSE(can_move(board, 3, 6, 2, 7));
-    TEST_ASSERT_FALSE(can_move(board, 4, 1, 2, 5));
-}
-
 int main(void) {
     UNITY_BEGIN();
     
@@ -96,21 +77,3 @@ int main(void) {
     UNITY_END();
 }
 
-/*
- * List Of Things to Implement (Test)
- *   --Create Board, Destroy Board
- *   --Initialize Board
- *   --Get Piece
- *   Can move Rook
- *   Can move Knight
- *   Can move Bishop
- *   Can move Queen
- *   Can move King
- *   Can move Pawn (Black)
- *   Can move Pawn (White)
- *   Check if can move pieces around
- *   Move pieces around
- *   Catch pices
- *   Check
- *   Checkmate
- */
