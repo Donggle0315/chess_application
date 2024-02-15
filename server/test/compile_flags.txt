@@ -1,3 +1,2 @@
--I./lib
--I../lib
--I../src
+-I../include
+-Iinclude

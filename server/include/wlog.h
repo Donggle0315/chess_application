@@ -13,12 +13,14 @@ inline void print_error(const char *file_path, const int line_num,
     fprintf(stderr, "file: %s\nline %d, function:%s : %s\n", __FILE__,         \
             __LINE__, __FUNC__, err_msg);
 
-#define DEBUG(dbg_msg)                                                         \
-    fprintf(stdout, "file: %s\nline %d, function:%s : %s\n", __FILE__,         \
-            __LINE__, __FUNC__, dbg_msg);
+#define DEBUG(dbg_fmt, ...)                                                         \
+    fprintf(stdout, "file: %s\nline %d, function:%s\n", __FILE__,         \
+            __LINE__, __FUNC__, dbg_fmt); \
+    fprintf(stdout, dbg_fmt, __VA_ARGS__); \
+    fprintf(stdout, "\n");
 #else
 #define ERROR(err_msg)
-#define DEBUG(dbg_msg)
+#define DEBUG(dbg_fmt, ...)
 #endif
 
 #endif
