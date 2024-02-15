@@ -1,0 +1,10 @@
+.vscode
+__pycache__/
+client/.venv
+
+*.o
+*.d
+*.test
+
+server/bin
+server/mysql_login_info.h

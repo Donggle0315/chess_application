@@ -1,6 +1,6 @@
 #include "fff.h"
 #include "unity.h"
-#include "socketw.h"
+#include "network/socketw.h"
 
 DEFINE_FFF_GLOBALS
 
@@ -123,27 +123,19 @@ void test_socketw_run_server() {
 
 }
 
-void test_socketw_send_msgs(){
-
-}
-
-void test_github_action() {
-    TEST_FAIL();
-}
 
 int main(void) {
     UNITY_BEGIN();
 
     RUN_TEST(test_socketw_create_destroy);
     RUN_TEST(test_socketw_create_destroy_msg);
+
     // queue
     RUN_TEST(test_socketw_enqueue_single);
     RUN_TEST(test_socketw_enqueue_multiple);
     RUN_TEST(test_socketw_enqueue_too_much);
     RUN_TEST(test_socketw_dequeue_nothing);
     RUN_TEST(test_socketw_dequeue_multiple);
-
-    RUN_TEST(test_github_action);
 
     return UNITY_END();
 }

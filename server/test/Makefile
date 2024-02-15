@@ -3,7 +3,7 @@ CC := gcc
 
 # Compiler flags
 CFLAGS := -Wall -Wextra
-LFLAGS := -Ilib -I../lib -Llib -ltest
+LFLAGS := -Ilib -I../src/network -I../src -Llib -ltest
 
 LIB_DIR := lib
 BIN_DIR := bin
@@ -11,10 +11,13 @@ BIN_DIR := bin
 # Compiled library
 LIB := libtest.a
 
-SRC_DIR := ../lib ../src
-SRC_FILES := $(wildcard $(SRC_DIR)/*.c)
+SRC_DIR := ../src ../src/network
+SRC_FILES := $(foreach dir, $(SRC_DIR), $(wildcard $(SRC_DIR)/*.c))
 BUILD_DIR := build
-OBJ_FILES := $(patsubst $(SRC_DIR)/%.c,$(BUILD_DIR)/%.o,$(SRC_FILES))
+OBJ_FILES := $(patsubst %.c,$(BUILD_DIR)/%.o,$(SRC_FILES))
+
+$(info $(SRC_FILES))
+$(info $(OBJ_FILES))
 
 
 TEST_SRC_DIR := test_src
