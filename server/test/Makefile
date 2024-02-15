@@ -23,14 +23,17 @@ INC_SUBDIRS := $(shell find $(INCDIR) -type d)
 
 
 # Default target
-all: project tests
+all: project update_object tests
 
 # Build the project files in ../src
 project:
 	cd .. && make
 
+update_object:
+	 $(eval OBJS := $(shell find $(MAINOBJDIR) -name '*.o' | grep -v main.o))
+
 # Build the individual test files in /test
-tests: $(TEST_EXES)
+tests: project $(TEST_EXES)
 
 # Pattern rule to build individual test executables
 $(BINDIR)/%.test: $(TESTDIR)/%.c $(OBJS) $(BUILDDIR)/unity.o | $(BINDIR)
@@ -47,4 +50,4 @@ $(BUILDDIR):
 
 # Clean rule
 clean:
-	rm -r $(BINDIR)
+	rm -r $(BINDIR) $(BUILDDIR)
