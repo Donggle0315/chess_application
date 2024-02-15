@@ -16,4 +16,4 @@ jobs:
     - name: build test
       run: cd server/test && make
     - name: run test
-      run: ./server/test/runall.sh
+      run: cd server/test && ./runall.sh
