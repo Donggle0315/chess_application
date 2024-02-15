@@ -19,9 +19,6 @@ TEST_EXES := $(addprefix $(BINDIR)/,$(addsuffix .test,$(TEST_BASENAMES)))
 # Get all subdirectories of ../include
 INC_SUBDIRS := $(shell find $(INCDIR) -type d)
 
-# Flatten the list of subdirectories
-INC_SUBDIRS_FLAT := $(foreach dir,$(INC_SUBDIRS),$(wildcard $(dir)/*.h))
-
 
 
 # Default target

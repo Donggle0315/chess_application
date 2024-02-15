@@ -23,6 +23,9 @@ TARGET = $(TARGETDIR)/server
 # Include directories
 INC := -I$(INCDIR)
 
+# Get all subdirectories of ../include
+INC_SUBDIRS := $(shell find $(INCDIR) -type d)
+
 # Default target
 all: $(TARGET)
 
@@ -33,7 +36,7 @@ $(TARGET): $(OBJS)
 # Rule to compile source files into object files
 $(BUILDDIR)/%.o: $(SRCDIR)/%.c
 	mkdir -p $(BUILDDIR)/$(dir $<)
-	$(CC) $(CFLAGS) $(DEPFLAGS) $(INC) -c -o $@ $<
+	$(CC) $(CFLAGS) $(DEPFLAGS) $(addprefix -I,$(INC_SUBDIRS)) -c -o $@ $<
 
 # Include automatically generated dependency files
 -include $(OBJS:.o=.d)
