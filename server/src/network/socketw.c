@@ -3,12 +3,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#include "socketw.h"
 #include <sys/poll.h>
 #include <sys/select.h>
 #include <sys/socket.h>
 #include <unistd.h>
+
+#include "network/socketw.h"
 
 #ifdef DEBUG
 #define PRINT_ERROR(err_msg) print_error(__FILE__, __LINE__, __func__, err_msg)

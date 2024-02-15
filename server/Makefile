@@ -30,19 +30,27 @@ INC_SUBDIRS := $(shell find $(INCDIR) -type d)
 all: $(TARGET)
 
 # Rule to build the executable
-$(TARGET): $(OBJS)
+$(TARGET): $(OBJS) | $(TARGETDIR)
 	$(CC) $(CFLAGS) $(INC) -o $@ $^
 
 # Rule to compile source files into object files
-$(BUILDDIR)/%.o: $(SRCDIR)/%.c
-	mkdir -p $(BUILDDIR)/$(dir $<)
+$(BUILDDIR)/%.o: $(SRCDIR)/%.c | $(BUILDDIR)
+	mkdir -p $(@D)
 	$(CC) $(CFLAGS) $(DEPFLAGS) $(addprefix -I,$(INC_SUBDIRS)) -c -o $@ $<
 
 # Include automatically generated dependency files
 -include $(OBJS:.o=.d)
 
+
+# Directories
+$(BUILDDIR):
+	mkdir $(BUILDDIR)
+
+$(TARGETDIR): 
+	mkdir $(TARGETDIR)
+
 # Clean rule
 clean:
-	rm -rf $(BUILDDIR)/*.o $(BUILDDIR)/*.d $(TARGET)
+	rm -r $(BUILDDIR) $(TARGETDIR)
 
 .PHONY: all clean
