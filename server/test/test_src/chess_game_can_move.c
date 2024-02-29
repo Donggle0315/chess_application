@@ -76,15 +76,27 @@ void test_knight_move() {
 void test_knight_cannot_move() {
     set_piece(board, 3, 3, BLACK_KNIGHT);
     TEST_ASSERT_FALSE(can_move(board, 3, 3, 4, 4));
-
 }
 
 void test_bishop_can_move_diagonal() {
-
+    set_piece(board, 3, 3, BLACK_BISHOP);
+    TEST_ASSERT_TRUE(can_move(board, 3, 3, 5, 5));
+    TEST_ASSERT_TRUE(can_move(board, 3, 3, 1, 1));
+    TEST_ASSERT_TRUE(can_move(board, 3, 3, 5, 1));
 }
 
 
+void test_bishop_cannot_move_not_diagonal() {
+    set_piece(board, 3, 3, WHITE_BISHOP);
+    TEST_ASSERT_FALSE(can_move(board, 3, 3, 2, 5));
+    TEST_ASSERT_FALSE(can_move(board, 3, 3, 4, 6));
+}
 
+void test_bishop_cannot_move_blocked() {
+    set_piece(board, 3, 3, WHITE_BISHOP);
+    set_piece(board, 2, 4, WHITE_PAWN);
+    TEST_ASSERT_FALSE(can_move(board, 3, 3, 1, 5));
+}
 
 void test_blank_cannot_move() {
     set_piece(board, 0, 0, BLANK);
@@ -131,6 +143,11 @@ int main(void) {
     RUN_TEST(test_knight_move);
     RUN_TEST(test_knight_cannot_move);
 
+    // bishop
+    RUN_TEST(test_bishop_can_move_diagonal);
+    RUN_TEST(test_bishop_cannot_move_not_diagonal);
+    RUN_TEST(test_bishop_cannot_move_blocked);
+
     // blank
     RUN_TEST(test_blank_cannot_move);
 
@@ -139,6 +156,5 @@ int main(void) {
     RUN_TEST(test_all_cannot_move_oob);
     RUN_TEST(test_all_cannot_move_same_color);
 
-    UNITY_END();
-    return 0;
+    return UNITY_END();
 }

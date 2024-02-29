@@ -89,6 +89,29 @@ COLOR get_color(ChessBoard *board, int row, int col) {
     return color;
 }
 
+bool can_move_common(ChessBoard *board, int sr, int sc, int tr, int tc) {
+    // Can't move Out of bounds
+    if (sr < 0 || sr >= 8 || sc < 0 || sr >= 8 || tr < 0 || tr >= 8 || tc < 0 ||
+        tc >= 8) {
+        DEBUG("Out of bounds");
+        return false;
+    }
+
+    // Can't move on same place
+    if (sr == tr && sc == tc) {
+        DEBUG("Same place");
+        return false;
+    }
+
+    // Can't move if same color
+    if (get_color(board, sr, sc) == get_color(board, tr, tc)) {
+        DEBUG("Same color");
+        return false;
+    }
+
+    return true;
+}
+
 bool can_move_rook(ChessBoard *board, int sr, int sc, int tr, int tc) {
     // move diagonal
     if (sr != tr && sc != tc) {
@@ -141,28 +164,29 @@ bool can_move_knight(int sr, int sc, int tr, int tc) {
     return false;
 }
 
+bool can_move_bishop(ChessBoard *board, int sr, int sc, int tr, int tc) {
+    // not diagonal
+    if (abs(sr - tr) != abs(sc - tc)) {
+        return false;
+    }
+
+    // check if something in between
+    if (sr > sc)
+
+
+
+    return true;
+}
+
 bool can_move(ChessBoard *board, int sr, int sc, int tr, int tc) {
-    // Can't move Out of bounds
-    if (sr < 0 || sr >= 8 || sc < 0 || sr >= 8 || tr < 0 || tr >= 8 || tc < 0 ||
-        tc >= 8) {
-        DEBUG("Out of bounds");
-        return false;
-    }
-
-    // Can't move on same place
-    if (sr == tr && sc == tc) {
-        DEBUG("Same place");
-        return false;
-    }
-
-    // Can't move if same color
-    if (get_color(board, sr, sc) == get_color(board, tr, tc)) {
-        DEBUG("Same color");
+    // check common reasons for not being able to move
+    if (!can_move_common(board, sr, sc, tr, tc)) {
         return false;
     }
 
     PIECE cur_piece = get_piece(board, sr, sc);
     DEBUG("Cur Piece: %d", cur_piece);
+
     switch (cur_piece) {
     case BLACK_ROOK:
     case WHITE_ROOK:
@@ -170,6 +194,9 @@ bool can_move(ChessBoard *board, int sr, int sc, int tr, int tc) {
     case BLACK_KNIGHT:
     case WHITE_KNIGHT:
         return can_move_knight(sr, sc, tr, tc);
+    case BLACK_BISHOP:
+    case WHITE_BISHOP:
+        return can_move_bishop(board, sr, sc, tr, tc);
     }
 
     return false;

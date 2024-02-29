@@ -86,6 +86,6 @@ int main(void) {
     RUN_TEST(test_initialize_board);
     RUN_TEST(test_get_color);
 
-    UNITY_END();
+    return UNITY_END();
 }
 
