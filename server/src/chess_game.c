@@ -171,9 +171,18 @@ bool can_move_bishop(ChessBoard *board, int sr, int sc, int tr, int tc) {
     }
 
     // check if something in between
-    if (sr > sc)
-
-
+    int dr = (sr < tr) ? 1 : -1;
+    int dc = (sc < tc) ? 1 : -1;
+    sr += dr;
+    sc += dc;
+    while (sr != tr && sc != tc) {
+        if (get_piece(board, sr, sc) != BLANK) {
+            DEBUG("Something Blocked Bishop");
+            return false;
+        }
+        sr += dr;
+        sc += dc;
+    }
 
     return true;
 }

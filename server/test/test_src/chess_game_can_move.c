@@ -95,7 +95,9 @@ void test_bishop_cannot_move_not_diagonal() {
 void test_bishop_cannot_move_blocked() {
     set_piece(board, 3, 3, WHITE_BISHOP);
     set_piece(board, 2, 4, WHITE_PAWN);
+    set_piece(board, 5, 5, BLACK_PAWN);
     TEST_ASSERT_FALSE(can_move(board, 3, 3, 1, 5));
+    TEST_ASSERT_FALSE(can_move(board, 3, 3, 6, 6));
 }
 
 void test_blank_cannot_move() {
