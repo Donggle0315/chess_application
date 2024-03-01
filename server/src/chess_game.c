@@ -58,7 +58,7 @@ void set_piece(ChessBoard *board, int row, int col, PIECE piece) {
 
 PIECE get_piece(ChessBoard *board, int row, int col) {
     PIECE piece = board->board[row][col];
-    DEBUG("get (%d, %d) : %d", row, col, p);
+    DEBUG("get (%d, %d) : %d", row, col, piece);
     return piece;
 }
 
@@ -87,6 +87,29 @@ COLOR get_color(ChessBoard *board, int row, int col) {
 
     DEBUG("get (%d, %d) : %d", row, col, color);
     return color;
+}
+
+bool is_blocked_in_between(ChessBoard *board, int sr, int sc, int tr, int tc) {
+    int dr = (sr < tr) ? 1 : -1;
+    int dc = (sc < tc) ? 1 : -1;
+    if (sr == tr) {
+        dr = 0;
+    }
+    else if (sc == tc) {
+        dc = 0;
+    }
+
+    sr += dr;
+    sc += dc;
+    while (sr != tr || sc != tc) {
+        if (get_piece(board, sr, sc) != BLANK) {
+            return true;
+        }
+        sr += dr;
+        sc += dc;
+    }
+
+    return false;
 }
 
 bool can_move_common(ChessBoard *board, int sr, int sc, int tr, int tc) {
@@ -118,38 +141,10 @@ bool can_move_rook(ChessBoard *board, int sr, int sc, int tr, int tc) {
         DEBUG("Move Diagonal");
         return false;
     }
-
-    // something blocking
-    if (sr < tr) {
-        for (int r = sr + 1; r < tr; r++) {
-            if (get_piece(board, r, sc) != BLANK) {
-                DEBUG("Something Blocked Rook");
-                return false;
-            }
-        }
-    } else {
-        for (int r = sr - 1; r > tr; r--) {
-            if (get_piece(board, r, sc) != BLANK) {
-                DEBUG("Something Blocked Rook");
-                return false;
-            }
-        }
-    }
-
-    if (sc < tc) {
-        for (int c = sc + 1; c < tc; c++) {
-            if (get_piece(board, sr, c) != BLANK) {
-                DEBUG("Something Blocked Rook");
-                return false;
-            }
-        }
-    } else {
-        for (int c = sc - 1; c > tc; c--) {
-            if (get_piece(board, sr, c) != BLANK) {
-                DEBUG("Something Blocked Rook");
-                return false;
-            }
-        }
+    
+    if(is_blocked_in_between(board, sr, sc, tr, tc)) {
+        DEBUG("Something blocked Rook")
+        return false;
     }
 
     return true;
@@ -164,24 +159,31 @@ bool can_move_knight(int sr, int sc, int tr, int tc) {
     return false;
 }
 
+
 bool can_move_bishop(ChessBoard *board, int sr, int sc, int tr, int tc) {
     // not diagonal
     if (abs(sr - tr) != abs(sc - tc)) {
+        DEBUG("Not diagonal for bishop")
+        return false;
+    }
+    
+    if(is_blocked_in_between(board, sr, sc, tr, tc)) {
+        DEBUG("Something blocked Bishop")
         return false;
     }
 
-    // check if something in between
-    int dr = (sr < tr) ? 1 : -1;
-    int dc = (sc < tc) ? 1 : -1;
-    sr += dr;
-    sc += dc;
-    while (sr != tr && sc != tc) {
-        if (get_piece(board, sr, sc) != BLANK) {
-            DEBUG("Something Blocked Bishop");
-            return false;
-        }
-        sr += dr;
-        sc += dc;
+    return true;
+}
+
+bool can_move_queen(ChessBoard *board, int sr, int sc, int tr, int tc) {
+    // not horizontal/vertical or diagonal
+    if (sr != tr && sc != tc && abs(sr-tr) != abs(sc-tc)) {
+        return false;
+    }
+    
+    if(is_blocked_in_between(board, sr, sc, tr, tc)) {
+        DEBUG("Something blocked Queen")
+        return false;
     }
 
     return true;
@@ -194,7 +196,7 @@ bool can_move(ChessBoard *board, int sr, int sc, int tr, int tc) {
     }
 
     PIECE cur_piece = get_piece(board, sr, sc);
-    DEBUG("Cur Piece: %d", cur_piece);
+    DEBUG("Cur Piece: %d (%d, %d) -> (%d, %d)", cur_piece, sr, sc, tr, tc);
 
     switch (cur_piece) {
     case BLACK_ROOK:
@@ -206,6 +208,9 @@ bool can_move(ChessBoard *board, int sr, int sc, int tr, int tc) {
     case BLACK_BISHOP:
     case WHITE_BISHOP:
         return can_move_bishop(board, sr, sc, tr, tc);
+    case BLACK_QUEEN:
+    case WHITE_QUEEN:
+        return can_move_queen(board, sr, sc, tr, tc);
     }
 
     return false;

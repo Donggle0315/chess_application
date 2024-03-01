@@ -100,11 +100,28 @@ void test_bishop_cannot_move_blocked() {
     TEST_ASSERT_FALSE(can_move(board, 3, 3, 6, 6));
 }
 
+void test_queen_move_col() {
+    set_piece(board, 3, 3, BLACK_QUEEN);
+    TEST_ASSERT_TRUE(can_move(board, 3, 3, 3, 6));
+    TEST_ASSERT_TRUE(can_move(board, 3, 3, 3, 1));
+}
+
+void test_queen_move_row() {
+    set_piece(board, 3, 3, WHITE_QUEEN);
+    TEST_ASSERT_TRUE(can_move(board, 3, 3, 1, 3));
+    TEST_ASSERT_TRUE(can_move(board, 3, 3, 7, 3));
+}
+
+void test_queen_cannot_move() {
+    set_piece(board, 3, 3, WHITE_QUEEN);
+    TEST_ASSERT_FALSE(can_move(board, 3, 3, 1, 4));
+    TEST_ASSERT_FALSE(can_move(board, 3, 3, 5, 4));
+}
+
 void test_blank_cannot_move() {
     set_piece(board, 0, 0, BLANK);
     TEST_ASSERT_FALSE(can_move(board, 0, 0, 1, 0));
 }
-
 
 void test_all_cannot_move_oob() {
     set_piece(board, 3, 6, BLACK_ROOK);
@@ -149,6 +166,11 @@ int main(void) {
     RUN_TEST(test_bishop_can_move_diagonal);
     RUN_TEST(test_bishop_cannot_move_not_diagonal);
     RUN_TEST(test_bishop_cannot_move_blocked);
+
+    // queen
+    RUN_TEST(test_queen_move_col);
+    RUN_TEST(test_queen_move_row);
+    RUN_TEST(test_queen_cannot_move);
 
     // blank
     RUN_TEST(test_blank_cannot_move);

@@ -8,16 +8,16 @@ inline void print_error(const char *file_path, const int line_num,
             line_num, function_name, error);
 }
 
-#ifdef DEBUG
+#ifdef __DEBUG__
 #define ERROR(err_msg)                                                         \
     fprintf(stderr, "file: %s\nline %d, function:%s : %s\n", __FILE__,         \
-            __LINE__, __FUNC__, err_msg);
+            __LINE__, __FUNCTION__, err_msg);
 
 #define DEBUG(dbg_fmt, ...)                                                         \
     fprintf(stdout, "file: %s\nline %d, function:%s\n", __FILE__,         \
-            __LINE__, __FUNC__, dbg_fmt); \
-    fprintf(stdout, dbg_fmt, __VA_ARGS__); \
-    fprintf(stdout, "\n");
+            __LINE__, __FUNCTION__); \
+    fprintf(stdout, dbg_fmt, ##__VA_ARGS__); \
+    fprintf(stdout, "\n"); 
 #else
 #define ERROR(err_msg)
 #define DEBUG(dbg_fmt, ...)
