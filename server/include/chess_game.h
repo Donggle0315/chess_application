@@ -27,6 +27,7 @@ typedef enum {
 
 typedef struct {
     PIECE board[8][8];
+    bool has_moved[8][8];
 } ChessBoard;
 
 ChessBoard *chess_create_board();
@@ -37,8 +38,8 @@ void set_piece(ChessBoard *board, int row, int col, PIECE piece);
 PIECE get_piece(ChessBoard *board, int row, int col);
 COLOR get_color(ChessBoard *board, int row, int col);
 
-
 bool can_move(ChessBoard *board, int start_row, int start_col, int target_row, int target_col);
+bool move(ChessBoard *board, int start_row, int start_col, int target_row, int target_col);
 
 
 

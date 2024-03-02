@@ -118,6 +118,91 @@ void test_queen_cannot_move() {
     TEST_ASSERT_FALSE(can_move(board, 3, 3, 5, 4));
 }
 
+void test_king_move_one_unit() {
+    set_piece(board, 3, 3, BLACK_KING);
+    TEST_ASSERT_TRUE(can_move(board, 3, 3, 2, 4));
+    TEST_ASSERT_TRUE(can_move(board, 3, 3, 4, 3));
+}
+
+void test_king_cannot_move() {
+    set_piece(board, 3, 3, BLACK_KING);
+    TEST_ASSERT_FALSE(can_move(board, 3, 3, 2, 5));
+    TEST_ASSERT_FALSE(can_move(board, 3, 3, 1, 2));
+}
+
+void test_pawn_first_move_black() {
+    set_piece(board, 1, 1, BLACK_PAWN);
+
+    TEST_ASSERT_TRUE(can_move(board, 1, 1, 2, 1));
+    TEST_ASSERT_TRUE(can_move(board, 1, 1, 3, 1));
+}
+
+void test_pawn_first_move_white() {
+    set_piece(board, 6, 6, WHITE_PAWN);
+
+    TEST_ASSERT_TRUE(can_move(board, 6, 6, 5, 6));
+    TEST_ASSERT_TRUE(can_move(board, 6, 6, 4, 6));
+}
+
+void test_pawn_cannot_move_black() {
+    set_piece(board, 1, 1, BLACK_PAWN);
+
+    TEST_ASSERT_FALSE(can_move(board, 1, 1, 3, 2));
+}
+
+void test_pawn_cannot_move_white() {
+    set_piece(board, 6, 6, WHITE_PAWN);
+
+    TEST_ASSERT_FALSE(can_move(board, 6, 6, 4, 4));
+}
+
+void test_pawn_cannot_move_two_units_after_first_move_black() {
+    set_piece(board, 1, 1, BLACK_PAWN);
+
+    move(board, 1, 1, 2, 1);
+    TEST_ASSERT_FALSE(can_move(board, 1, 1, 4, 1));
+}
+
+void test_pawn_cannot_move_two_units_after_first_move_white() {
+    set_piece(board, 6, 6, WHITE_PAWN);
+
+    move(board, 6, 6, 5, 6);
+    TEST_ASSERT_FALSE(can_move(board, 6, 6, 3, 6));
+}
+
+void test_pawn_cannot_move_blocked_black() {
+    set_piece(board, 1, 1, BLACK_PAWN);
+    set_piece(board, 2, 1, WHITE_ROOK);
+
+    TEST_ASSERT_FALSE(can_move(board, 1, 1, 2, 1));
+}
+
+void test_pawn_cannot_move_blocked_white() {
+    set_piece(board, 6, 6, WHITE_PAWN);
+    set_piece(board, 5, 6, BLACK_ROOK);
+
+    TEST_ASSERT_FALSE(can_move(board, 6, 6, 5, 6));
+}
+
+void test_pawn_catch_black() {
+    set_piece(board, 1, 1, BLACK_PAWN);
+    set_piece(board, 2, 0, WHITE_ROOK);
+    set_piece(board, 2, 2, WHITE_BISHOP);
+
+    TEST_ASSERT_TRUE(can_move(board, 1, 1, 2, 0));
+    TEST_ASSERT_TRUE(can_move(board, 1, 1, 2, 2));
+}
+
+void test_pawn_catch_white() {
+    set_piece(board, 6, 6, WHITE_PAWN);
+    set_piece(board, 5, 5, BLACK_ROOK);
+    set_piece(board, 5, 7, BLACK_KNIGHT);
+
+    TEST_ASSERT_TRUE(can_move(board, 6, 6, 5, 5));
+    TEST_ASSERT_TRUE(can_move(board, 6, 6, 5, 7));
+}
+
+
 void test_blank_cannot_move() {
     set_piece(board, 0, 0, BLANK);
     TEST_ASSERT_FALSE(can_move(board, 0, 0, 1, 0));
@@ -148,6 +233,12 @@ void test_all_cannot_move_same_color() {
     TEST_ASSERT_FALSE(can_move(board, 4, 1, 4, 7));
 }
 
+void test_all_cannot_catch_king() {
+    set_piece(board, 3, 3, WHITE_QUEEN);
+    set_piece(board, 4, 4, BLACK_KING);
+    TEST_ASSERT_FALSE(can_move(board, 3, 3, 4, 4));
+}
+
 
 int main(void) {
     UNITY_BEGIN();
@@ -172,6 +263,22 @@ int main(void) {
     RUN_TEST(test_queen_move_row);
     RUN_TEST(test_queen_cannot_move);
 
+    // king
+    RUN_TEST(test_king_move_one_unit);
+    RUN_TEST(test_king_cannot_move);
+
+    // pawn
+    RUN_TEST(test_pawn_first_move_black);
+    RUN_TEST(test_pawn_first_move_white);
+    RUN_TEST(test_pawn_cannot_move_black);
+    RUN_TEST(test_pawn_cannot_move_white);
+    RUN_TEST(test_pawn_cannot_move_two_units_after_first_move_black);
+    RUN_TEST(test_pawn_cannot_move_two_units_after_first_move_white);
+    RUN_TEST(test_pawn_cannot_move_blocked_black);
+    RUN_TEST(test_pawn_cannot_move_blocked_white);
+    RUN_TEST(test_pawn_catch_black);
+    RUN_TEST(test_pawn_catch_white);
+
     // blank
     RUN_TEST(test_blank_cannot_move);
 
@@ -179,6 +286,7 @@ int main(void) {
     RUN_TEST(test_all_cannot_move_to_itself);
     RUN_TEST(test_all_cannot_move_oob);
     RUN_TEST(test_all_cannot_move_same_color);
+    RUN_TEST(test_all_cannot_catch_king);
 
     return UNITY_END();
 }
